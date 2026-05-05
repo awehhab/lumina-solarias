@@ -38,27 +38,18 @@
   window._fbCache = {members:null, events:null, games:null, issues:null, solarias:null};
 
   async function loadAllFromFirebase() {
-    const keys = Object.keys(KEYS);
-    for (const k of keys) {
-      try {
-        const snap = await window._fbGet(window._fbRef(db, KEYS[k]));
-        if (snap.exists()) {
-          window._fbCache[k] = snap.val();
-        }
-      } catch(e) {
-        console.warn('Firebase read error for', k, e);
-      }
-    }
-    // Also load theme hue
+    // GÜVENLIK: Önce sadece şifreleri yükle, auth onaylanmadan uygulama başlamaz
     try {
-      const hueSnap = await window._fbGet(window._fbRef(db, 'ls_hue'));
-      if(hueSnap.exists()) window._fbCache._hue = hueSnap.val();
+      const pwSnap = await window._fbGet(window._fbRef(db, 'ls_passwords'));
+      if(pwSnap.exists()) window._fbCache._passwords = pwSnap.val();
     } catch(e) {}
+
     window._fbReady = true;
-    // Hide loading overlay and boot app
+    // Loading ekranını gizle, auth ekranını göster
     const overlay = document.getElementById('loading-overlay');
     if (overlay) overlay.style.display = 'none';
-    if (window._bootApp) window._bootApp();
+    // _bootApp artık buradan çağrılmıyor — auth onayından sonra çağrılacak
+    if (window._onFirebaseReady) window._onFirebaseReady();
   }
 
   loadAllFromFirebase();
@@ -80,27 +71,42 @@
   --red:#f87171;--red-bg:rgba(248,113,113,0.12);
   --amber:#fbbf24;--amber-bg:rgba(251,191,36,0.12);
   --r:14px;--rs:8px;
+  --sidebar-w:260px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
 .shell{display:flex;min-height:100vh;}
-.sidebar{width:230px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0;}
+.sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0;transition:width .2s;}
 .logo{padding:22px 20px 16px;border-bottom:1px solid var(--border);}
-.logo-t{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--accent);letter-spacing:.04em;}
+.logo-t{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--accent);letter-spacing:.04em;}
 .logo-s{font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.06em;text-transform:uppercase;}
 .nav{padding:12px 10px;flex:1;}
-.ni{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:var(--rs);cursor:pointer;font-size:13px;color:var(--text2);font-weight:500;transition:all .15s;margin-bottom:2px;user-select:none;}
+.ni{display:flex;align-items:center;gap:9px;padding:10px 13px;border-radius:var(--rs);cursor:pointer;font-size:13.5px;color:var(--text2);font-weight:500;transition:all .15s;margin-bottom:2px;user-select:none;}
 .ni:hover{background:var(--card);color:var(--text);}
 .ni.active{background:rgba(var(--p-r),var(--p-g),var(--p-b),0.13);color:var(--accent);}
-.ni-icon{font-size:14px;width:18px;text-align:center;}
-.ss{padding:14px;border-top:1px solid var(--border);}
+.ni-icon{font-size:15px;width:20px;text-align:center;}
+.ss{padding:16px;border-top:1px solid var(--border);}
 .ss-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;font-weight:700;}
-.ss-row{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;}
+.ss-row{display:flex;justify-content:space-between;margin-bottom:7px;font-size:12.5px;}
 .ss-k{color:var(--text2);}
 .ss-v{color:var(--accent);font-weight:600;}
 .ss-divider{height:1px;background:var(--border);margin:8px 0;}
 .ss-tip{font-size:10.5px;color:var(--text3);line-height:1.5;margin-top:4px;}
-.main{flex:1;padding:26px 30px;overflow-x:hidden;min-width:0;}
+.main{flex:1;padding:28px 36px;overflow-x:hidden;min-width:0;}
+/* Large screen tweaks */
+@media(min-width:1400px){
+  :root{--sidebar-w:280px;}
+  .main{padding:32px 48px;}
+  .pt{font-size:26px!important;}
+  .sv{font-size:28px!important;}
+  .ni{font-size:14px;}
+  .logo-t{font-size:16px;}
+}
+@media(min-width:1800px){
+  :root{--sidebar-w:300px;}
+  .main{padding:36px 60px;}
+}
 .tab{display:none;}.tab.active{display:block;}
 .ph{margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
 .pt{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;}
@@ -259,17 +265,153 @@ select option{background:var(--bg2);}
 .theme-btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 14px;margin:10px 10px 12px;border-radius:var(--rs);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s;width:calc(100% - 20px);}
 .theme-btn:hover{background:var(--card2);color:var(--text);border-color:var(--border2);}
 .theme-btn-dot{width:12px;height:12px;border-radius:50%;background:var(--p400);flex-shrink:0;}
-.theme-popup{display:none;position:absolute;bottom:calc(100% + 6px);left:10px;right:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,0.5);}
+.theme-popup{display:none;position:absolute;bottom:calc(100% + 6px);left:10px;right:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:60vh;overflow-y:auto;}
 .theme-popup.open{display:block;}
 .theme-popup-wrap{position:relative;}
 .theme-presets{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;}
 .tp-dot{width:100%;aspect-ratio:1;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s;}
 .tp-dot:hover{transform:scale(1.15);}
 .tp-dot.active{border-color:var(--text);transform:scale(1.1);}
+
+/* ===== HAMBURGER & MOBILE OVERLAY ===== */
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:600;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rs);width:40px;height:40px;align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:5px;padding:10px;}
+.hamburger span{display:block;width:18px;height:2px;background:var(--text2);border-radius:2px;transition:all .2s;}
+.mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;}
+.mob-overlay.open{display:block;}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+@media(max-width:768px){
+  .hamburger{display:flex;}
+  .shell{flex-direction:column;}
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;
+    width:260px;z-index:550;
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+    height:100vh;
+  }
+  .sidebar.mob-open{transform:translateX(0);}
+  .main{padding:16px 14px;padding-top:62px;}
+  .ph{flex-direction:column;align-items:flex-start;gap:8px;}
+  .pt{font-size:20px;}
+  .sgrid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .sc{padding:12px 14px;}
+  .sv{font-size:22px;}
+  /* Force single column for side-by-side grids */
+  div[style*="grid-template-columns:1fr 1fr"]{display:flex!important;flex-direction:column!important;gap:12px!important;}
+  /* Members sort buttons wrap */
+  .sec-h{flex-direction:column;align-items:flex-start;gap:10px;}
+  .sort-btns{flex-wrap:wrap;}
+  #m-search{width:100%!important;}
+  /* Tables scroll */
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{min-width:520px;}
+  /* Modal full width */
+  .modal,.modal-wide,.ev-detail-modal{max-width:96vw;padding:18px 14px;max-height:88vh;}
+  .fg{grid-template-columns:1fr;}
+  .fgf{grid-column:1;}
+  /* Drawer full width on mobile */
+  .drawer{width:92vw;}
+  /* Calendar smaller */
+  .cal-day{min-height:52px;padding:4px;}
+  .cal-dh{font-size:9px;padding:4px 0;}
+  /* Countdown grid */
+  .countdown-grid{grid-template-columns:1fr;}
+  /* Notification bar */
+  .notif-bar{left:8px;right:8px;max-width:none;}
+  /* Theme popup goes up */
+  .theme-popup{bottom:calc(100% + 6px);}
+  /* Webhook URL row stack */
+  div[style*="display:flex;gap:8px;align-items:stretch"]{flex-direction:column!important;}
+}
+
+@media(max-width:480px){
+  .sgrid{grid-template-columns:1fr 1fr;}
+  .sv{font-size:20px;}
+  .cal-day{min-height:42px;}
+  .cal-ev{display:none;}
+  .cal-day.has-event-planned::before,.cal-day.has-event-done::before,.cal-day.has-event-cancelled::before{
+    content:'•';font-size:14px;display:block;text-align:center;margin-top:2px;
+  }
+  .btn{padding:7px 11px;font-size:12px;}
+}
+
+/* ===== AUTH - Compact login panel (top-right) ===== */
+.auth-screen{display:none;} /* full-screen auth devre dışı — artık kullanılmıyor */
+/* Login panel - sağ üstte küçük buton + dropdown panel */
+.login-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;}
+.login-btn:hover{border-color:var(--p400);color:var(--text);background:rgba(var(--p-r),var(--p-g),var(--p-b),0.07);}
+.login-panel-wrap{position:static;}
+.login-panel{display:none;position:fixed;top:auto;left:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:18px;width:calc(var(--sidebar-w) - 20px);max-width:300px;z-index:700;box-shadow:0 12px 40px rgba(0,0,0,0.6);}
+.login-panel.open{display:block;}
+.login-panel-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text);}
+.login-role-row{display:flex;gap:8px;margin-bottom:12px;}
+.login-role-chip{flex:1;padding:8px 10px;border-radius:var(--rs);border:1.5px solid var(--border2);background:transparent;cursor:pointer;text-align:center;transition:all .2s;color:var(--text2);font-size:12px;font-family:'DM Sans',sans-serif;}
+.login-role-chip:hover{border-color:var(--p400);color:var(--text);}
+.login-role-chip.selected{border-color:var(--p400);background:rgba(var(--p-r),var(--p-g),var(--p-b),0.15);color:var(--accent);}
+.login-role-chip .chip-icon{font-size:16px;display:block;margin-bottom:3px;}
+.login-pw-wrap{display:none;}
+.login-pw-wrap.show{display:block;}
+.login-pw-input{width:100%;background:var(--card);border:1.5px solid var(--border2);border-radius:var(--rs);color:var(--text);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border .2s;margin-bottom:8px;}
+.login-pw-input:focus{border-color:var(--p400);}
+.login-err{font-size:11.5px;color:var(--red);min-height:14px;margin-bottom:6px;}
+.login-enter-btn{width:100%;padding:9px;border-radius:var(--rs);border:none;background:var(--p600);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s;}
+.login-enter-btn:hover{background:hsl(var(--hue),82%,46%);}
+/* Role badge in header */
+.role-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;}
+.role-badge.admin{background:rgba(251,191,36,0.15);color:var(--amber);border:1px solid rgba(251,191,36,0.3);}
+.role-badge.solarias{background:rgba(var(--p-r),var(--p-g),var(--p-b),0.15);color:var(--p200);border:1px solid var(--border2);}
+.role-badge.viewer{background:rgba(52,211,153,0.1);color:var(--green);border:1px solid rgba(52,211,153,0.2);}
+/* Locked tab nav item */
+.ni.locked{opacity:.35;cursor:not-allowed;}
+.ni.locked:hover{background:transparent;color:var(--text2);}
+/* Locked overlay for settings */
+.locked-notice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:60px 20px;color:var(--text3);text-align:center;}
+.locked-notice .lock-icon{font-size:48px;opacity:.5;}
+.locked-notice p{font-size:14px;line-height:1.6;}
+/* Admin password change section */
+.pw-change-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+@media(max-width:600px){.pw-change-grid{grid-template-columns:1fr;}}
+
+/* ===== VIEWER MODE ===== */
+body.viewer-mode .btn-p,
+body.viewer-mode .btn-d,
+body.viewer-mode .btn-amber,
+body.viewer-mode .btn-green { display: none !important; }
+body.viewer-mode .btn-g { display: none !important; }
+body.viewer-mode .sort-btn { display: none !important; }
+body.viewer-mode input:not(.login-pw-input),
+body.viewer-mode select,
+body.viewer-mode textarea {
+  pointer-events: none !important;
+  opacity: 0.6 !important;
+}
+body.viewer-mode th { cursor: default !important; }
+body.viewer-mode tbody tr { pointer-events: none !important; cursor: default !important; }
+/* Viewer: puan ve olumsuzluk gizle */
+body.viewer-mode .ev-score-cell,
+body.viewer-mode .ev-score-display,
+body.viewer-mode .ec-score,
+body.viewer-mode .viewer-hide { display: none !important; }
+/* Viewer: arşiv butonu gizle */
+body.viewer-mode #m-archive-toggle { display: none !important; }
+/* Viewer: üye sütunu - sadece katılım sayısı görünsün, diğer action butonlar gizle */
+body.viewer-mode .member-action-col { display: none !important; }
 </style>
 </head>
 <body>
 <!-- Firebase Loading Overlay -->
+<!-- Mobile hamburger -->
+<div class="hamburger" id="hamburger" onclick="toggleSidebar()">
+  <span></span><span></span><span></span>
+</div>
+<div class="mob-overlay" id="mob-overlay" onclick="closeSidebar()"></div>
+
+<!-- OLD AUTH SCREEN - hidden, kept for compatibility -->
+<div class="auth-screen" id="auth-screen" style="display:none;">
+  <div></div>
+</div>
+
 <div id="loading-overlay" style="position:fixed;inset:0;background:#0d0b14;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;">
   <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:#C4B5FD;letter-spacing:.04em;">⬡ Lumina Solarias</div>
   <div style="font-size:13px;color:#6b5f88;letter-spacing:.06em;">Firebase'e bağlanıyor...</div>
@@ -310,6 +452,31 @@ select option{background:var(--bg2);}
   <div class="logo">
     <div class="logo-t">⬡ Lumina Solarias</div>
     <div class="logo-s">Etkinlik Yönetim Paneli</div>
+    <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <span class="role-badge" id="sidebar-role-badge" style="flex:1;" onclick="currentRole!=='viewer'?logoutAuth():openLoginPanel()" title="Rol bilgisi"></span>
+      <!-- Login panel -->
+      <div class="login-panel-wrap" id="login-panel-wrap">
+        <button class="login-btn" id="login-open-btn" onclick="openLoginPanel()" style="display:none;">🔑 Giriş</button>
+        <button class="login-btn" id="logout-btn" onclick="logoutAuth()" style="display:none;color:var(--red);border-color:rgba(248,113,113,0.3);">⏏ Çıkış</button>
+        <div class="login-panel" id="login-panel" onclick="event.stopPropagation()">
+          <div class="login-panel-title">🔐 Yetkili Giriş</div>
+          <div class="login-role-row">
+            <button class="login-role-chip" id="lchip-admin" onclick="selectLoginRole('admin')">
+              <span class="chip-icon">👑</span>Admin
+            </button>
+            <button class="login-role-chip" id="lchip-solarias" onclick="selectLoginRole('solarias')">
+              <span class="chip-icon">⭐</span>Solarias
+            </button>
+          </div>
+          <div class="login-pw-wrap" id="login-pw-wrap">
+            <input class="login-pw-input" id="login-pw-input" type="password" placeholder="Şifre gir..." onkeydown="if(event.key==='Enter')submitLoginPanel()">
+            <div class="login-err" id="login-err"></div>
+            <button class="login-enter-btn" onclick="submitLoginPanel()">Giriş Yap</button>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text3);text-align:center;">Şifresiz giriş: Gözlemci modundasın</div>
+        </div>
+      </div>
+    </div>
   </div>
   <nav class="nav">
     <div class="ni active" onclick="showTab('overview')" id="nav-overview"><span class="ni-icon">◈</span><span>Genel Bakış</span></div>
@@ -319,6 +486,7 @@ select option{background:var(--bg2);}
     <div class="ni" onclick="showTab('games')" id="nav-games"><span class="ni-icon">▷</span><span>Oyun Listesi</span></div>
     <div class="ni" onclick="showTab('solarias')" id="nav-solarias"><span class="ni-icon">★</span><span>Solarias</span></div>
     <div class="ni" onclick="showTab('issues')" id="nav-issues"><span class="ni-icon">⚑</span><span>Olumsuzluklar</span></div>
+    <div class="ni" onclick="showTab('data')" id="nav-data"><span class="ni-icon">🗂</span><span>Veri Yönetimi</span></div>
     <div class="ni" onclick="showTab('settings')" id="nav-settings"><span class="ni-icon">⚙</span><span>Ayarlar</span></div>
   </nav>
   <div class="ss">
@@ -488,7 +656,9 @@ select option{background:var(--bg2);}
     </div>
     <div class="sec">
       <div class="sec-h"><div class="sec-t">Yönetilen Etkinlik Sayısı</div></div>
-      <div style="position:relative;height:260px;"><canvas id="chart-sol"></canvas></div>
+      <div id="chart-sol-wrap" style="position:relative;overflow:hidden;">
+        <canvas id="chart-sol"></canvas>
+      </div>
     </div>
   </div>
 </div>
@@ -548,6 +718,32 @@ select option{background:var(--bg2);}
       <div style="font-size:12px;color:var(--text3);padding:8px 0;">Henüz gönderim yok.</div>
     </div>
   </div>
+
+  <!-- Password Management (Admin only) -->
+  <div class="sec" style="max-width:720px;margin-top:0;" id="pw-manage-sec">
+    <div class="sec-h"><div class="sec-t">🔑 Şifre Yönetimi</div></div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      Her rol için şifreyi buradan değiştirebilirsin. Değişiklik anında Firebase'e kaydedilir ve tüm kullanıcılar için geçerli olur.
+    </div>
+    <div class="pw-change-grid">
+      <div class="fgrp">
+        <label>👑 Admin Şifresi</label>
+        <input type="password" id="pw-admin-new" placeholder="Yeni şifre" autocomplete="new-password">
+        <button class="btn btn-p btn-sm" style="margin-top:6px;width:100%;" onclick="changePassword('admin')">Değiştir</button>
+      </div>
+      <div class="fgrp">
+        <label>⭐ Solarias Şifresi</label>
+        <input type="password" id="pw-solarias-new" placeholder="Yeni şifre" autocomplete="new-password">
+        <button class="btn btn-p btn-sm" style="margin-top:6px;width:100%;" onclick="changePassword('solarias')">Değiştir</button>
+      </div>
+      <div class="fgrp">
+        <label>👁 Görüntüleyici Şifresi</label>
+        <input type="password" id="pw-viewer-new" placeholder="Yeni şifre" autocomplete="new-password">
+        <button class="btn btn-p btn-sm" style="margin-top:6px;width:100%;" onclick="changePassword('viewer')">Değiştir</button>
+      </div>
+    </div>
+    <div id="pw-change-msg" style="font-size:12px;min-height:18px;margin-top:10px;"></div>
+  </div>
 </div>
 
 <!-- ISSUES -->
@@ -557,6 +753,73 @@ select option{background:var(--bg2);}
     <button class="btn btn-p" onclick="openAddIssue()">＋ Sorun Ekle</button>
   </div>
   <div id="issue-list-wrap"></div>
+</div>
+
+<!-- DATA MANAGEMENT -->
+<div class="tab" id="tab-data">
+  <div class="ph">
+    <div><div class="pt">Veri Yönetimi</div><div class="ps">Yedekleme, geri yükleme ve şablon sistemi</div></div>
+  </div>
+
+  <!-- Export -->
+  <div class="sec" style="max-width:720px;">
+    <div class="sec-h"><div class="sec-t">📤 Dışa Aktar (Yedek)</div></div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.7;">
+      Tüm verilerini JSON formatında indir. Herhangi bir sorun çıkarsa bu dosyayı kullanarak geri yükleyebilirsin.
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;">
+      <button class="btn btn-p" onclick="exportData('all')">⬇ Tümünü İndir</button>
+      <button class="btn btn-g" onclick="exportData('members')">👥 Sadece Üyeler</button>
+      <button class="btn btn-g" onclick="exportData('events')">📅 Sadece Etkinlikler</button>
+      <button class="btn btn-g" onclick="exportData('games')">🎮 Sadece Oyunlar</button>
+    </div>
+    <div id="export-info" style="margin-top:12px;font-size:12px;color:var(--text3);"></div>
+  </div>
+
+  <!-- Import -->
+  <div class="sec" style="max-width:720px;margin-top:0;" id="import-sec">
+    <div class="sec-h"><div class="sec-t">📥 İçe Aktar (Geri Yükle)</div></div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7;">
+      ⚠️ <strong style="color:var(--amber);">Dikkat:</strong> Mevcut veriler silinir ve dosyadaki verilerle değiştirilir. Önce yedek al!
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <label style="display:flex;align-items:center;gap:10px;background:var(--card2);border:1.5px dashed var(--border2);border-radius:var(--rs);padding:16px;cursor:pointer;transition:border-color .2s;" id="import-drop-zone">
+        <span style="font-size:24px;">📂</span>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text);">JSON dosyası seç veya sürükle</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Daha önce buradan indirilen yedek dosyaları desteklenir</div>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display:none;" onchange="previewImport(this)">
+      </label>
+      <div id="import-preview" style="display:none;background:var(--card2);border:1px solid var(--border2);border-radius:var(--rs);padding:14px;">
+        <div class="sec-t" style="font-size:13px;margin-bottom:10px;">📋 Dosya İçeriği</div>
+        <div id="import-preview-body" style="font-size:12px;color:var(--text2);line-height:1.8;"></div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button class="btn btn-g" onclick="cancelImport()">İptal</button>
+          <button class="btn btn-d" onclick="confirmImport()">⚠ Geri Yükle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Templates -->
+  <div class="sec" style="max-width:720px;margin-top:0;">
+    <div class="sec-h">
+      <div class="sec-t">📋 Etkinlik Şablonları</div>
+      <button class="btn btn-p btn-sm" id="save-template-btn" onclick="openSaveTemplate()">＋ Şablon Kaydet</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      Sık kullandığın etkinlik türlerini şablon olarak kaydet. Yeni etkinlik eklerken tek tıkla doldur.
+    </div>
+    <div id="template-list"></div>
+  </div>
+
+  <!-- Firebase Durumu -->
+  <div class="sec" style="max-width:720px;margin-top:0;">
+    <div class="sec-h"><div class="sec-t">☁ Firebase Durumu</div></div>
+    <div id="fb-status-body" style="font-size:13px;line-height:1.9;"></div>
+    <button class="btn btn-g btn-sm" style="margin-top:10px;" onclick="renderFbStatus()">🔄 Yenile</button>
+  </div>
 </div>
 
 </div><!-- /main -->
@@ -967,6 +1230,14 @@ function notify(icon,title,msg,color){
 
 // ==================== NAV ====================
 function showTab(name){
+  // Yetki kontrolü
+  if(currentRole){
+    const allowed = ROLE_TABS[currentRole]||[];
+    if(!allowed.includes(name)){
+      showNotif('🔒','Erişim Kısıtlı','Bu seksiyon için yetkiniz yok.',3000);
+      return;
+    }
+  }
   if(name==='settings') setTimeout(renderWebhookSettings, 50);
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
@@ -982,6 +1253,7 @@ function renderTab(n){
   if(n==='games')renderGames();
   if(n==='solarias')renderSolarias();
   if(n==='issues')renderIssues();
+  if(n==='data')renderDataTab();
   updateSidebar();
 }
 
@@ -1079,11 +1351,12 @@ function renderOverview(){
 
   // Recent
   const rec=[...done].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4);
+  const isViewerOv=currentRole==='viewer';
   document.getElementById('ov-recent').innerHTML=rec.map(e=>`
     <div class="ec" onclick="openEvDetailById('${e.date}_${e.name}')">
       <div class="ec-db"><div class="ec-dd">${e.date.split('-')[2]}</div><div class="ec-dm">${monthShort(e.date)}</div></div>
       <div class="ec-info"><div class="ec-name">${e.name}</div><div class="ec-meta">${(e.participants||[]).length} katılımcı${e.managers?' · '+e.managers:''}</div></div>
-      ${e.score?`<div class="ec-score">${e.score}/10</div>`:''}
+      ${!isViewerOv && e.score?`<div class="ec-score">${e.score}/10</div>`:''}
     </div>`).join('')||'<div class="empty">Henüz etkinlik yok.</div>';
 }
 
@@ -1188,28 +1461,33 @@ function renderMembers(){
     const returned=oldStatus==='Pasif'&&status==='Aktif';
     prevStatuses[m.id]=status;
     const lastEv=getLastEvent(m.id);
+    const isViewer = currentRole==='viewer';
     if(mArchiveView){
-      html+=`<tr onclick="openMemberDrawer('${m.id}')" style="cursor:pointer;">
+      html+=`<tr onclick="${isViewer?'':'openMemberDrawer(\''+m.id+'\')'}" style="cursor:${isViewer?'default':'pointer'};">
         <td><strong>${m.nick}</strong></td>
         <td style="color:var(--text2);">${m.user}</td>
         <td><strong style="color:var(--p200);">${count}</strong></td>
         <td>${roleBadge(count)}</td>
         <td><span class="badge b-none">🗄 Arşiv</span></td>
         <td style="font-size:12px;color:var(--text3);">${lastEv?fmtDateShort(lastEv.date):'—'}</td>
-        <td style="display:flex;gap:6px;" onclick="event.stopPropagation()">
-          <button class="btn btn-g btn-sm" onclick="unarchiveMember('${m.id}')">↩ Geri Al</button>
-          <button class="btn btn-g btn-sm" onclick="openEditMember('${m.id}')">Düzenle</button>
+        <td class="member-action-col" style="display:${isViewer?'none':''};" onclick="event.stopPropagation()">
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-g btn-sm" onclick="unarchiveMember('${m.id}')">↩ Geri Al</button>
+            <button class="btn btn-g btn-sm" onclick="openEditMember('${m.id}')">Düzenle</button>
+          </div>
         </td>
       </tr>`;
     } else {
-      html+=`<tr onclick="openMemberDrawer('${m.id}')" style="cursor:pointer;">
+      html+=`<tr onclick="${isViewer?'':'openMemberDrawer(\''+m.id+'\')'}" style="cursor:${isViewer?'default':'pointer'};">
         <td><strong>${m.nick}</strong></td>
-        <td style="color:var(--text2);">${m.user}</td>
+        <td style="color:var(--text2);">${isViewer?'—':m.user}</td>
         <td><strong style="color:var(--p200);">${count}</strong></td>
         <td>${roleBadge(count)}</td>
         <td>${status==='Aktif'?`<span class="badge b-act">● Aktif</span>`:`<span class="badge b-pas">● Pasif</span>`}${returned?' <span class="badge b-ret">↩ Geri döndü</span>':''}</td>
         <td style="font-size:12px;color:var(--text3);">${lastEv?fmtDateShort(lastEv.date):'—'}</td>
-        <td><button class="btn btn-g btn-sm" onclick="event.stopPropagation();openEditMember('${m.id}')">Düzenle</button></td>
+        <td class="member-action-col" style="display:${isViewer?'none':''};">
+          <button class="btn btn-g btn-sm" onclick="event.stopPropagation();openEditMember('${m.id}')">Düzenle</button>
+        </td>
       </tr>`;
     }
   });
@@ -1248,6 +1526,7 @@ function archiveMember(){
 }
 
 function confirmArchive(){
+  if(!guardWrite())return;
   const id=document.getElementById('arch-member-id').value;
   const reason=document.getElementById('arch-reason').value.trim();
   const members=load('members');
@@ -1259,7 +1538,7 @@ function confirmArchive(){
   save('members',members);
   closeModal('modal-archive-reason');
   notify('🗄','Üye arşivlendi',`${members[idx].nick} arşive taşındı.`,'#6b5f88');
-  webhookMemberArchive(members[idx].nick, reason);
+  webhookMemberArchive(members[idx].nick, reason, members[idx].id);
   renderMembers();updateSidebar();
 }
 
@@ -1270,7 +1549,7 @@ function unarchiveMember(id){
   members[idx].archived=false;
   save('members',members);
   notify('↩','Üye geri alındı',`${members[idx].nick} aktif listeye döndü.`,'#c4b5fd');
-  webhookMemberBack(members[idx].nick);
+  webhookMemberBack(members[idx].nick, members[idx].id);
   renderMembers();updateSidebar();
 }
 
@@ -1280,6 +1559,7 @@ function openAddMember(){
 }
 
 function saveNewMember(){
+  if(!guardWrite())return;
   const nick=document.getElementById('am-nick').value.trim();
   const user=document.getElementById('am-user').value.trim();
   const id=document.getElementById('am-id').value.trim();
@@ -1290,8 +1570,7 @@ function saveNewMember(){
   save('members',members);
   closeModal('modal-add-member');
   notify('👤','Yeni üye eklendi!',`${nick} sisteme eklendi.`,'#c4b5fd');
-  webhookMemberAdd(nick);
-  // Büyüme kontrolü
+  webhookMemberAdd(nick, id);
   const total=load('members').filter(m=>!m.archived).length;
   if(total%5===0) webhookGrowth(total);
   renderMembers();updateSidebar();
@@ -1317,6 +1596,7 @@ function openEditMember(id){
 }
 
 function updateMember(){
+  if(!guardWrite())return;
   const oldId=document.getElementById('em-idx').value;
   const newNick=document.getElementById('em-nick').value.trim();
   const newUser=document.getElementById('em-user').value.trim();
@@ -1338,6 +1618,7 @@ function updateMember(){
 }
 
 function deleteMember(){
+  if(!guardWrite())return;
   const id=document.getElementById('em-idx').value;
   if(!confirm('Bu üyeyi silmek istediğine emin misin?'))return;
   const members=load('members');
@@ -1345,7 +1626,7 @@ function deleteMember(){
   save('members',members.filter(m=>m.id!==id));
   closeModal('modal-edit-member');
   notify('🗑','Üye silindi','Üye sistemden kaldırıldı.','#f87171');
-  if(delM) webhookMemberRemove(delM.nick);
+  if(delM) webhookMemberRemove(delM.nick, delM.id);
   renderMembers();updateSidebar();
 }
 
@@ -1430,16 +1711,17 @@ function renderEvents(){
     const idx=events.indexOf(e);
     const pc=(e.participants||[]).length;
     const issues=load('issues').filter(i=>i.event&&i.event.includes(e.name));
-    return`<div class="ec" onclick="openEvDetail(${idx})">
+    const isViewer=currentRole==='viewer';
+    return`<div class="ec" onclick="openEvDetail(${idx})" style="cursor:pointer;">
       <div class="ec-db"><div class="ec-dd">${e.date.split('-')[2]}</div><div class="ec-dm">${monthShort(e.date)}</div></div>
       <div class="ec-info">
         <div class="ec-name">${e.name} <span style="font-size:10px;color:var(--text3);margin-left:4px;">${e.type||''}</span>
           ${e.status==='done'?'<span class="badge b-act" style="font-size:10px;margin-left:4px;">✓ Tamamlandı</span>':e.status==='cancelled'?'<span class="badge b-pas" style="font-size:10px;margin-left:4px;">✕ İptal</span>':'<span class="badge b-none" style="font-size:10px;margin-left:4px;">◷ Planlandı</span>'}
-          ${issues.length?`<span class="badge" style="font-size:10px;margin-left:4px;background:var(--red-bg);color:var(--red);">⚠ Sorun</span>`:''}
+          ${!isViewer && issues.length?`<span class="badge" style="font-size:10px;margin-left:4px;background:var(--red-bg);color:var(--red);">⚠ Sorun</span>`:''}
         </div>
         <div class="ec-meta">${pc} katılımcı${e.managers?' · '+e.managers:''}${e.dur?' · '+e.dur:''}</div>
       </div>
-      ${e.score?`<div class="ec-score">${e.score}/10</div>`:''}
+      ${!isViewer && e.score?`<div class="ec-score ev-score-display">${e.score}/10</div>`:''}
     </div>`;
   }).join('')||'<div class="empty">Henüz etkinlik yok.</div>';
 }
@@ -1464,16 +1746,17 @@ function openEvDetail(idx){
   const parts=(e.participants||[]).map(id=>{const m=members.find(x=>x.id===id);return m?m.nick:id;});
 
   let body='';
+  const isViewer=currentRole==='viewer';
   if(e.status==='done'){
     body=`
       <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">${fmtDateLong(e.date)}${e.time?' · '+e.time:''}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;margin-top:10px;">
         <div class="sc"><div class="sl">Katılımcı Sayısı</div><div class="sv">${parts.length}</div></div>
-        <div class="sc"><div class="sl">Değerlendirme</div><div class="sv">${e.score||'—'}</div></div>
+        ${!isViewer?`<div class="sc"><div class="sl">Değerlendirme</div><div class="sv">${e.score||'—'}</div></div>`:''}
         <div class="sc"><div class="sl">Süre</div><div style="font-size:14px;font-weight:600;color:var(--accent);margin-top:4px;">${e.dur||'—'}</div></div>
         <div class="sc"><div class="sl">Yöneticiler</div><div style="font-size:13px;color:var(--accent);margin-top:4px;">${e.managers||'—'}</div></div>
       </div>
-      ${issues.length?`<div style="background:var(--red-bg);border-left:3px solid var(--red);border-radius:var(--rs);padding:10px 14px;margin-bottom:14px;">
+      ${!isViewer && issues.length?`<div style="background:var(--red-bg);border-left:3px solid var(--red);border-radius:var(--rs);padding:10px 14px;margin-bottom:14px;">
         <div style="font-size:11px;color:var(--red);font-weight:600;margin-bottom:4px;">⚠ Yaşanan Olumsuzluk</div>
         ${issues.map(i=>`<div style="font-size:13px;margin-bottom:4px;">${i.issue}</div>${i.cause?`<div style="font-size:11px;color:var(--text3);">Sebep: ${i.cause}</div>`:''}`).join('')}
       </div>`:''}
@@ -1507,6 +1790,18 @@ function openEvDetail(idx){
   }
 
   document.getElementById('evd-body').innerHTML=body;
+  // Viewer: düzenle/sil/tamamla gizle
+  const editBtn = document.getElementById('evd-edit-btn');
+  const delBtn  = document.getElementById('evd-del-btn');
+  const compForm = document.getElementById('evd-complete-form');
+  if(currentRole==='viewer'){
+    if(editBtn) editBtn.style.display='none';
+    if(delBtn)  delBtn.style.display='none';
+    if(compForm) compForm.style.display='none';
+  } else {
+    if(editBtn) editBtn.style.display='';
+    if(delBtn)  delBtn.style.display='';
+  }
   openModal('modal-ev-detail');
 }
 
@@ -1515,6 +1810,7 @@ function openEvDetail(idx){
 // saveEditEvent moved above
 
 function deleteCurrentEvent(){
+  if(!guardWrite())return;
   if(currentEvIdx===-1)return;
   const events=load('events');
   const name=events[currentEvIdx].name;
@@ -1551,6 +1847,7 @@ function evAddGameChange(){
 }
 
 function saveEventPlan(){
+  if(!guardWrite())return;
   const gameSel=document.getElementById('eva-game').value;
   const name=gameSel==='__new__'?document.getElementById('eva-custom').value.trim():gameSel;
   const date=document.getElementById('eva-date').value;
@@ -1599,6 +1896,7 @@ function updateSelectedTags(targetId,selectedIds,prefix){
 }
 
 function completeEvent(){
+  if(!guardWrite())return;
   if(currentEvIdx===-1)return;
   const events=load('events');
   const members=load('members');
@@ -1628,7 +1926,7 @@ function completeEvent(){
       milestones.forEach(ms=>{
         if(newCount===ms.n){
           notify(ms.icon,`${m.nick} yeni rol kazandı!`,`${ms.role} rolüne ulaştı`,'#c4b5fd');
-          webhookMilestone(m.nick, ms.role, newCount);
+          webhookMilestone(m.nick, ms.role, newCount, m.id);
         }
       });
     }
@@ -1798,6 +2096,7 @@ function renderGames(){
 
 function openAddGame(){document.getElementById('ag-name').value='';openModal('modal-add-game');}
 function saveGame(){
+  if(!guardWrite())return;
   const name=document.getElementById('ag-name').value.trim();
   if(!name)return alert('Oyun adı gerekli!');
   const games=load('games');
@@ -1833,6 +2132,7 @@ function saveEditGame(){
 }
 
 function deleteGame(idx){
+  if(!guardWrite())return;
   const games=load('games');
   const name=games[idx].name;
   if(!confirm(`"${name}" oyununu silmek istediğine emin misin?`))return;
@@ -1893,9 +2193,63 @@ function renderSolarias(){
 
   destroyChart('chart-sol');
   const counts=solarias.map(s=>events.filter(e=>e.status==='done'&&(e.managers||'').toLowerCase().includes(s.name.toLowerCase())).length);
+  const maxCount = Math.max(...counts, 1);
+  // Dynamic height: 52px per bar, min 200px
+  const chartH = Math.max(200, solarias.length * 52 + 40);
+  const wrap = document.getElementById('chart-sol-wrap');
+  if(wrap) wrap.style.height = chartH + 'px';
+  const st = getComputedStyle(document.documentElement);
+  const p600 = st.getPropertyValue('--p600').trim();
+  const p400 = st.getPropertyValue('--p400').trim();
+  const p200 = st.getPropertyValue('--p200').trim();
+  const pr = st.getPropertyValue('--p-r').trim();
+  const pg = st.getPropertyValue('--p-g').trim();
+  const pb = st.getPropertyValue('--p-b').trim();
   chartInstances['chart-sol']=new Chart(document.getElementById('chart-sol'),{
-    type:'bar',data:{labels:solarias.map(s=>s.name),datasets:[{data:counts,backgroundColor:getComputedStyle(document.documentElement).getPropertyValue('--p600').trim(),borderRadius:6,borderSkipped:false}]},
-    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:`rgba(${getComputedStyle(document.documentElement).getPropertyValue('--p-r').trim()},${getComputedStyle(document.documentElement).getPropertyValue('--p-g').trim()},${getComputedStyle(document.documentElement).getPropertyValue('--p-b').trim()},0.07)`},ticks:{color:'#6b5f88',font:{size:11}}},y:{grid:{display:false},ticks:{color:'#a89bc4',font:{size:12}}}}}
+    type:'bar',
+    data:{
+      labels:solarias.map(s=>s.name),
+      datasets:[{
+        data:counts,
+        backgroundColor: counts.map(c => c === maxCount ? p600 : c > 0 ? p400 : `rgba(${pr},${pg},${pb},0.2)`),
+        borderRadius: 8,
+        borderSkipped: false,
+        borderWidth: 0,
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      indexAxis:'y',
+      layout:{padding:{right:40}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          callbacks:{
+            label:(item)=>' '+item.raw+' etkinlik yönetildi'
+          }
+        },
+        datalabels: undefined
+      },
+      scales:{
+        x:{
+          display:true,
+          grid:{color:`rgba(${pr},${pg},${pb},0.07)`},
+          ticks:{color:'#6b5f88',font:{size:11}},
+          beginAtZero:true,
+          suggestedMax: maxCount + 2
+        },
+        y:{
+          grid:{display:false},
+          ticks:{
+            color:'#c4b5fd',
+            font:{size:13, weight:'600'},
+            padding:8
+          }
+        }
+      },
+      animation:{duration:600,easing:'easeOutQuart'}
+    }
   });
 }
 
@@ -2024,6 +2378,7 @@ function openGameDetail(gameName){
 let eveSelectedMembers=[];
 
 function openEditEventModal(){
+  if(!guardWrite())return;
   if(currentEvIdx===-1)return;
   const events=load('events');
   const e=events[currentEvIdx];
@@ -2074,6 +2429,7 @@ function updateEveSelTags(){
 }
 
 function saveEditEvent(){
+  if(!guardWrite())return;
   const idx=parseInt(document.getElementById('eve-idx').value);
   const events=load('events');
   const e=events[idx];
@@ -2127,8 +2483,7 @@ function saveQuickMember(){
   members.push({nick,user,id});save('members',members);
   closeModal('modal-quick-member');
   notify('👤','Üye eklendi',nick+' sisteme eklendi.','#c4b5fd');
-  webhookMemberAdd(nick);
-  const total2=load('members').filter(m=>!m.archived).length;
+  webhookMemberAdd(nick, id);
   if(total2%5===0) webhookGrowth(total2);
   const src=document.getElementById('qm-source').value;
   if(src==='edit'){eveSelectedMembers.push(id);renderEvePicker(document.getElementById('eve-mp-search').value);updateEveSelTags();}
@@ -2189,7 +2544,7 @@ const TOGGLE_GROUPS = [
     { key:'onReminder', label:'24 saat kala hatırlatma',      emoji:'⏰', on:true  },
     { key:'onNoEvent',  label:'10+ gün etkinliksiz uyarı',    emoji:'⚠️', on:false },
     { key:'onWeekly',   label:'Haftalık özet (Pazartesi)',     emoji:'📊', on:true  },
-    { key:'onMonthly',  label:'Aylık rapor — ayın 1i',       emoji:'📈', on:true  },
+    { key:'onMonthly',  label:'Aylık rapor — ayın 1i',        emoji:'📈', on:true  },
     { key:'onAnniv',    label:'Topluluk yıldönümü',           emoji:'🎂', on:true  },
   ]},
 ];
@@ -2198,15 +2553,14 @@ const DEFAULT_TOGGLES = Object.fromEntries(
 );
 
 function getWebhookUrl(){
-  const cached = window._fbCache && window._fbCache._webhookUrl;
-  return cached || '';
+  return (window._fbCache && window._fbCache._webhookUrl) || '';
 }
-
 function getWebhookToggles(){
   const cached = window._fbCache && window._fbCache._webhookToggles;
   if(cached) return {...DEFAULT_TOGGLES, ...Object.fromEntries(Object.entries(DEFAULT_TOGGLES).map(([k,v])=>([k,{...v, on: cached[k]!==undefined ? cached[k] : v.on}])))};
   return {...DEFAULT_TOGGLES};
 }
+function webhookOn(key){ return getWebhookToggles()[key]?.on === true; }
 
 function webhookUrlChanged(v){
   const st = document.getElementById('webhook-status');
@@ -2216,12 +2570,13 @@ function webhookUrlChanged(v){
     st.textContent='✓ Geçerli Discord webhook URL formatı';
     st.style.color='var(--green)';
   } else {
-    st.textContent=`⚠ Discord Webhook URL'si https://discord.com/api/webhooks/ ile başlamalı`;
+    st.textContent=`⚠ Discord webhook URL'si https://discord.com/api/webhooks/ ile başlamalı`;
     st.style.color='var(--amber)';
   }
 }
 
 function saveWebhookUrl(){
+  if(!guardWrite())return;
   const url = document.getElementById('webhook-url-input').value.trim();
   if(url && !url.startsWith('https://discord.com/api/webhooks/')){
     return alert(`Geçersiz webhook URL! https://discord.com/api/webhooks/ ile başlamalı.`);
@@ -2241,7 +2596,6 @@ function renderWebhookSettings(){
   webhookUrlChanged(url);
   renderWebhookToggles();
   renderWebhookLog();
-  // Banner
   const banner = document.getElementById('wh-banner');
   if(banner){
     if(url){
@@ -2261,19 +2615,39 @@ function renderWebhookToggles(){
   if(!el) return;
   const toggles = getWebhookToggles();
   const url = getWebhookUrl();
-  const dis = !url ? 'opacity:.4;pointer-events:none;' : '';
+  const disabled = !url;
+
   el.innerHTML = TOGGLE_GROUPS.map(g=>`
-    <div style="margin-bottom:6px;">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:10px 0 6px;">${g.group}</div>
+    <div style="margin-bottom:4px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:12px 0 8px;">${g.group}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
         ${g.keys.map(t=>{
-          const v=toggles[t.key]||{on:t.on};
-          return`<label style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:var(--card2);border:1px solid ${v.on?'var(--border2)':'var(--border)'};border-radius:var(--rs);cursor:pointer;transition:border .2s,background .2s;${dis}" onmouseover="if(!this.style.pointerEvents||this.style.pointerEvents!=='none')this.style.background='var(--card)'" onmouseout="this.style.background='var(--card2)'">
-            <span style="font-size:13px;color:${v.on?'var(--text1)':'var(--text3)'};">${t.emoji} ${t.label}</span>
-            <div onclick="setWebhookToggle('${t.key}',!${v.on})" style="width:36px;height:20px;border-radius:10px;background:${v.on?'var(--p500)':'rgba(107,95,136,0.3)'};position:relative;flex-shrink:0;cursor:pointer;transition:background .2s;">
-              <div style="position:absolute;top:3px;left:${v.on?'19px':'3px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);"></div>
+          const v = toggles[t.key] || {on: t.on};
+          const isOn = v.on;
+          return `
+          <div onclick="${disabled?'':'setWebhookToggle(\''+t.key+'\','+(!isOn)+')'}"
+            style="display:flex;align-items:center;justify-content:space-between;gap:10px;
+              padding:10px 13px;border-radius:var(--rs);cursor:${disabled?'default':'pointer'};
+              background:${isOn?'rgba(var(--p-r),var(--p-g),var(--p-b),0.09)':'var(--card2)'};
+              border:1.5px solid ${isOn?'rgba(var(--p-r),var(--p-g),var(--p-b),0.35)':'var(--border)'};
+              opacity:${disabled?'.4':'1'};
+              transition:background .18s,border .18s;"
+            ${!disabled?`onmouseover="this.style.background='${isOn?'rgba(var(--p-r),var(--p-g),var(--p-b),0.14)':'var(--card)'}'" onmouseout="this.style.background='${isOn?'rgba(var(--p-r),var(--p-g),var(--p-b),0.09)':'var(--card2)'}'"`:''}>
+            <span style="font-size:12.5px;font-weight:500;color:${isOn?'var(--text)':'var(--text3)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${t.emoji} ${t.label}
+            </span>
+            <!-- Modern pill switch -->
+            <div style="flex-shrink:0;width:40px;height:22px;border-radius:11px;
+              background:${isOn?'var(--p600)':'rgba(107,95,136,0.25)'};
+              border:1.5px solid ${isOn?'var(--p400)':'rgba(107,95,136,0.4)'};
+              position:relative;transition:background .2s,border .2s;">
+              <div style="position:absolute;top:2px;left:${isOn?'18px':'2px'};
+                width:14px;height:14px;border-radius:50%;
+                background:${isOn?'#fff':'rgba(196,181,253,0.5)'};
+                box-shadow:${isOn?'0 1px 4px rgba(0,0,0,.4)':'none'};
+                transition:left .18s,background .18s;"></div>
             </div>
-          </label>`;
+          </div>`;
         }).join('')}
       </div>
     </div>`).join('');
@@ -2316,7 +2690,7 @@ function renderWebhookLog(){
     <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--card2);border:1px solid var(--border);border-radius:var(--rs);">
       <span style="font-size:14px;">${l.ok?'✅':'❌'}</span>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:12.5px;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.title}</div>
+        <div style="font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.title}</div>
         <div style="font-size:11px;color:var(--text3);">${l.date} ${l.time}</div>
       </div>
     </div>`).join('');
@@ -2326,6 +2700,13 @@ function clearWebhookLog(){ _webhookLog=[]; renderWebhookLog(); }
 async function sendWebhook(payload, logTitle){
   const url = getWebhookUrl();
   if(!url) return;
+  // Embed içindeki ve content'teki tüm <@ID>'leri tara → allowed_mentions.users'a ekle
+  // Bu olmadan Discord mention'ları ping atmaz
+  const payloadStr = JSON.stringify(payload);
+  const allIds = [...new Set([...payloadStr.matchAll(/<@(\d+)>/g)].map(m=>m[1]))];
+  if(allIds.length){
+    payload.allowed_mentions = { parse: [], users: allIds };
+  }
   try {
     const r = await fetch(url, {
       method:'POST',
@@ -2339,91 +2720,160 @@ async function sendWebhook(payload, logTitle){
   }
 }
 
-function webhookOn(key){
-  return getWebhookToggles()[key]?.on === true;
+// ── Yardımcılar ──────────────────────────────────────────────────────────────
+function _fmtDate(d){ if(!d)return'—'; const p=d.split('-'); return p[2]+'.'+p[1]+'.'+p[0]; }
+function _scoreBar(s){ if(!s) return ''; const n=parseFloat(s); const filled=Math.round(n); const empty=10-filled; return '🟪'.repeat(filled)+'⬛'.repeat(empty)+` **${s}/10**`; }
+function _roleIcon(count){ if(count>=50)return'👑'; if(count>=25)return'⚔️'; if(count>=10)return'🌱'; return''; }
+function _participantNames(ids){
+  const members=load('members');
+  return ids.map(id=>{ const m=members.find(x=>x.id===id); return m?m.nick:null; }).filter(Boolean);
+}
+// Discord'da gerçek etiket: <@ID>  (embed dışında content alanında çalışır)
+function _participantMentions(ids){
+  const members=load('members');
+  return ids.map(id=>{
+    const m=members.find(x=>x.id===id);
+    if(m && m.id && /^\d{15,20}$/.test(m.id)) return `<@${m.id}>`;
+    return m ? m.nick : null;
+  }).filter(Boolean);
+}
+// Embed içinde görüntüleme: "NickAdı" şeklinde, ID'si olmayanlar sadece nick
+function _participantDisplay(ids){
+  const members=load('members');
+  return ids.map(id=>{
+    const m=members.find(x=>x.id===id);
+    if(!m) return null;
+    return m.nick || m.id;
+  }).filter(Boolean);
 }
 
+// ── Etkinlik planlandı ───────────────────────────────────────────────────────
 function webhookPlanEvent(ev){
   if(!webhookOn('onPlan')) return;
+  const dateStr = _fmtDate(ev.date);
   sendWebhook({ embeds:[{
-    title: '📅 Yeni Etkinlik Planlandı!',
+    title: '📅  Yeni Etkinlik Planlandı',
     color: 0x7C3AED,
+    description: `### ${ev.name}\nTakvime eklendi — katılmak için hazır ol! 🎯`,
     fields:[
-      {name:'🎯 Etkinlik', value: ev.name, inline:true},
-      {name:'📆 Tarih',    value: ev.date, inline:true},
-      {name:'🕘 Saat',     value: ev.time||'21:00', inline:true},
-      ...(ev.managers?[{name:'👤 Yönetici', value: ev.managers, inline:true}]:[])
+      {name:'📆 Tarih',    value: dateStr,          inline:true},
+      {name:'🕘 Saat',     value: ev.time||'21:00',  inline:true},
+      {name:'🎭 Tür',      value: ev.type||'Oyun',   inline:true},
+      ...(ev.managers?[{name:'🎤 Yönetici', value: ev.managers, inline:false}]:[]),
     ],
+    footer:{ text:'Lumina Solarias · Etkinlik Sistemi' },
     timestamp: new Date().toISOString()
   }]}, `📅 ${ev.name} planlandı`);
 }
 
+// ── Etkinlik tamamlandı ──────────────────────────────────────────────────────
 function webhookCompleteEvent(ev){
   if(!webhookOn('onComplete')) return;
-  sendWebhook({ embeds:[{
-    title: '✅ Etkinlik Tamamlandı!',
+  const allMembers = load('members');
+  const ids = ev.participants||[];
+  const scoreBar = ev.score ? _scoreBar(ev.score) : null;
+
+  // Katılımcıları embed içinde <@ID> olarak göster
+  const participantMentions = ids.map(id=>{
+    const m = allMembers.find(x=>x.id===id);
+    if(m && m.id && /^\d{15,20}$/.test(m.id)) return `<@${m.id}>`;
+    return m ? `\`${m.nick}\`` : null;
+  }).filter(Boolean);
+
+  // Yöneticiyi de mention et (managers alanı üye nick'i ise ID'ye çevir)
+  let managerValue = ev.managers||'—';
+  if(ev.managers){
+    const mgr = allMembers.find(m=>m.nick===ev.managers||m.user===ev.managers);
+    if(mgr && /^\d{15,20}$/.test(mgr.id)) managerValue = `<@${mgr.id}>`;
+  }
+
+  const embeds = [{
+    title: '✅  Etkinlik Tamamlandı!',
     color: 0x34D399,
+    description: `### ${ev.name}`,
     fields:[
-      {name:'🎯 Etkinlik',    value: ev.name,                          inline:true},
-      {name:'👥 Katılımcı',   value: (ev.participants||[]).length+' kişi', inline:true},
-      {name:'⭐ Puan',        value: ev.score ? ev.score+'/10' : '—',  inline:true},
-      {name:'⏱ Süre',         value: ev.dur||'—',                      inline:true},
-      ...(ev.managers?[{name:'👤 Yönetici', value: ev.managers, inline:true}]:[])
+      {name:'👥 Katılım',     value: `**${ids.length} kişi**`,                                    inline:true},
+      {name:'⏱️ Süre',        value: ev.dur||'—',                                                  inline:true},
+      {name:'🎤 Yönetici',    value: managerValue,                                                 inline:true},
+      ...(scoreBar ? [{name:'⭐ Değerlendirme', value: scoreBar, inline:false}] : []),
+      {name:`👤 Katılımcılar (${ids.length} kişi)`,
+       value: participantMentions.length ? participantMentions.slice(0,20).join('  ') : '—',
+       inline:false},
     ],
+    footer:{ text:`Lumina Solarias · ${_fmtDate(ev.date)}` },
     timestamp: new Date().toISOString()
-  }]});
+  }];
+  sendWebhook({ embeds }, `✅ ${ev.name} tamamlandı (${ids.length} kişi)`);
 }
 
+// ── Etkinlik düzenlendi ──────────────────────────────────────────────────────
 function webhookEditEvent(ev, oldDate){
   if(!webhookOn('onEdit')) return;
   const dateChanged = oldDate && oldDate !== ev.date;
   sendWebhook({ embeds:[{
-    title: '✏️ Etkinlik Güncellendi!',
+    title: '✏️  Etkinlik Güncellendi',
     color: 0xFBBF24,
+    description: `**${ev.name}** etkinliğinde değişiklik yapıldı.`,
     fields:[
-      {name:'🎯 Etkinlik', value: ev.name, inline:true},
-      ...(dateChanged?[{name:'📆 Tarih', value: `${oldDate} → ${ev.date}`, inline:true}]:[{name:'📆 Tarih', value: ev.date, inline:true}]),
-      {name:'🕘 Saat', value: ev.time||'21:00', inline:true},
-      ...(ev.managers?[{name:'👤 Yönetici', value: ev.managers, inline:true}]:[])
+      dateChanged
+        ? {name:'📆 Tarih', value: `~~${_fmtDate(oldDate)}~~ → **${_fmtDate(ev.date)}**`, inline:true}
+        : {name:'📆 Tarih', value: _fmtDate(ev.date), inline:true},
+      {name:'🕘 Saat',    value: ev.time||'21:00',   inline:true},
+      {name:'🎭 Tür',     value: ev.type||'—',        inline:true},
+      ...(ev.managers?[{name:'🎤 Yönetici', value: ev.managers, inline:false}]:[]),
     ],
+    footer:{ text:'Lumina Solarias · Etkinlik Sistemi' },
     timestamp: new Date().toISOString()
-  }]});
+  }]}, `✏️ ${ev.name} güncellendi`);
 }
 
+// ── Etkinlik silindi ─────────────────────────────────────────────────────────
 function webhookDeleteEvent(name){
   if(!webhookOn('onDelete')) return;
   sendWebhook({ embeds:[{
-    title: '❌ Etkinlik İptal Edildi',
+    title: '❌  Etkinlik İptal Edildi',
     color: 0xF87171,
-    description: `**${name}** etkinliği kaldırıldı.`,
+    description: `**${name}** etkinliği sistemden kaldırıldı.\n> Merak etme, yakında yeni bir etkinlik planlanacak! 🗓️`,
+    footer:{ text:'Lumina Solarias · Etkinlik Sistemi' },
     timestamp: new Date().toISOString()
-  }]});
+  }]}, `❌ ${name} iptal edildi`);
 }
 
+// ── Olumsuzluk ───────────────────────────────────────────────────────────────
 function webhookIssue(ev, issueText){
   if(!webhookOn('onIssue')) return;
   sendWebhook({ embeds:[{
-    title: '⚠️ Olumsuzluk Kaydedildi',
+    title: '⚠️  Olumsuzluk Kaydedildi',
     color: 0xF87171,
     fields:[
-      {name:'📌 Etkinlik', value: ev, inline:true},
+      {name:'📌 Etkinlik', value: ev,        inline:false},
       {name:'📝 Açıklama', value: issueText, inline:false}
     ],
+    footer:{ text:'Lumina Solarias · Sorun Takibi' },
     timestamp: new Date().toISOString()
-  }]});
+  }]}, `⚠️ Olumsuzluk: ${ev}`);
 }
 
+// ── Test ──────────────────────────────────────────────────────────────────────
 async function testWebhook(){
   const url = document.getElementById('webhook-url-input').value.trim();
   if(!url) return alert('Önce webhook URL gir!');
+  const members = load('members').filter(m=>!m.archived);
+  const events  = load('events').filter(e=>e.status==='done');
   try {
     await fetch(url, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ embeds:[{
-        title:'🔔 Lumina Solarias — Test Bildirimi',
-        description:'Webhook bağlantısı başarıyla kuruldu! Artık etkinlik bildirimleri bu kanala düşecek.',
+        title:'🔔  Lumina Solarias — Bağlantı Testi',
         color: 0x7C3AED,
+        description:'Webhook bağlantısı başarıyla doğrulandı! Bildirimler bu kanala düşecek. ✨',
+        fields:[
+          {name:'👥 Toplam Üye',    value: members.length+' kişi', inline:true},
+          {name:'🎮 Etkinlik',      value: events.length+' etkinlik', inline:true},
+          {name:'📡 Durum',         value: '✅ Aktif',              inline:true},
+        ],
+        footer:{ text:'Lumina Solarias · Webhook Test' },
         timestamp: new Date().toISOString()
       }]})
     });
@@ -2433,148 +2883,268 @@ async function testWebhook(){
   }
 }
 
-// 24 saat kala hatırlatma — sayfa açılışında kontrol
+// ── 24 saat hatırlatma ────────────────────────────────────────────────────────
 let _reminderSent = false;
 function checkUpcomingReminder(){
   if(_reminderSent || !webhookOn('onReminder')) return;
-  const url = getWebhookUrl();
-  if(!url) return;
+  const url = getWebhookUrl(); if(!url) return;
   const events = load('events');
   const now = new Date();
-  const in24 = new Date(now.getTime() + 24*60*60*1000);
-  const tomorrow = in24.toISOString().split('T')[0];
-  const upcoming = events.filter(e=>e.status==='planned' && e.date===tomorrow);
-  upcoming.forEach(ev=>{
+  const tomorrow = new Date(now.getTime() + 24*60*60*1000).toISOString().split('T')[0];
+  events.filter(e=>e.status==='planned' && e.date===tomorrow).forEach(ev=>{
     _reminderSent = true;
     sendWebhook({ embeds:[{
-      title: '⏰ Yarın Etkinlik Var!',
+      title: '⏰  Yarın Etkinlik Var!',
       color: 0xC4B5FD,
+      description: `**${ev.name}** etkinliğine 24 saatten az kaldı! Hazırlan 🎯`,
       fields:[
-        {name:'🎯 Etkinlik', value: ev.name, inline:true},
-        {name:'🕘 Saat',     value: ev.time||'21:00', inline:true},
-        ...(ev.managers?[{name:'👤 Yönetici', value: ev.managers, inline:true}]:[])
+        {name:'📆 Tarih', value: _fmtDate(ev.date),  inline:true},
+        {name:'🕘 Saat',  value: ev.time||'21:00',    inline:true},
+        ...(ev.managers?[{name:'🎤 Yönetici', value: ev.managers, inline:true}]:[]),
       ],
+      footer:{ text:'Lumina Solarias · Hatırlatma Sistemi' },
       timestamp: new Date().toISOString()
-    }]});
+    }]}, `⏰ Yarın: ${ev.name}`);
   });
 }
 
-// Aylık rapor — Ayın 1'i
+// ── Aylık rapor ───────────────────────────────────────────────────────────────
 let _monthlySent = false;
 function checkMonthlySummary(){
   if(_monthlySent || !webhookOn('onMonthly')) return;
-  const url=getWebhookUrl(); if(!url) return;
-  const today=new Date();
+  const url = getWebhookUrl(); if(!url) return;
+  const today = new Date();
   if(today.getDate()!==1) return;
-  const lastMonth=new Date(today.getFullYear(), today.getMonth()-1, 1);
-  const lastMonthEnd=new Date(today.getFullYear(), today.getMonth(), 0);
-  const fmt=d=>d.toISOString().split('T')[0];
-  const events=load('events').filter(e=>e.status==='done'&&e.date>=fmt(lastMonth)&&e.date<=fmt(lastMonthEnd));
+  const lastMonth    = new Date(today.getFullYear(), today.getMonth()-1, 1);
+  const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+  const fmt = d => d.toISOString().split('T')[0];
+  const events = load('events').filter(e=>e.status==='done'&&e.date>=fmt(lastMonth)&&e.date<=fmt(lastMonthEnd));
   if(!events.length) return;
-  _monthlySent=true;
-  const total=events.reduce((a,e)=>a+(e.participants||[]).length,0);
-  const avg=(total/events.length).toFixed(1);
-  const topEv=[...events].sort((a,b)=>parseFloat(b.score||0)-parseFloat(a.score||0))[0];
-  // En aktif üye
-  const memberCount={};
+  _monthlySent = true;
+  const total = events.reduce((a,e)=>a+(e.participants||[]).length,0);
+  const avg   = (total/events.length).toFixed(1);
+  const topEv = [...events].sort((a,b)=>parseFloat(b.score||0)-parseFloat(a.score||0))[0];
+  const memberCount = {};
   events.forEach(e=>(e.participants||[]).forEach(id=>{memberCount[id]=(memberCount[id]||0)+1;}));
-  const topMId=Object.entries(memberCount).sort((a,b)=>b[1]-a[1])[0];
-  const members=load('members');
-  const topM=topMId?members.find(m=>m.id===topMId[0]):null;
-  const TR_M=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const topMId = Object.entries(memberCount).sort((a,b)=>b[1]-a[1])[0];
+  const topM   = topMId ? load('members').find(m=>m.id===topMId[0]) : null;
+  const TR_M   = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const topMDisplay = topM ? ((topM.id&&/^\d{15,20}$/.test(topM.id)) ? `<@${topM.id}> (${topM.nick})` : `**${topM.nick}**`) : null;
   sendWebhook({embeds:[{
-    title:`📈 ${TR_M[lastMonth.getMonth()]} Ayı Raporu`,
-    color:0x7C3AED,
+    title: `📈  ${TR_M[lastMonth.getMonth()]} Ayı Kapanış Raporu`,
+    color: 0x7C3AED,
+    description: `${TR_M[lastMonth.getMonth()]} ayında **${events.length} etkinlik** tamamlandı!`,
     fields:[
-      {name:'🎮 Etkinlik',value:events.length+' etkinlik',inline:true},
-      {name:'👥 Ort. Katılım',value:avg+' kişi',inline:true},
-      ...(topEv&&topEv.score?[{name:'⭐ En İyi',value:`${topEv.name} (${topEv.score}/10)`,inline:true}]:[]),
-      ...(topM?[{name:'🏆 En Aktif',value:`${topM.nick} (${topMId[1]} etkinlik)`,inline:true}]:[])
+      {name:'🎮 Etkinlik',       value: events.length+' etkinlik',     inline:true},
+      {name:'👥 Ort. Katılım',   value: avg+' kişi',                   inline:true},
+      {name:'📊 Toplam Katılım', value: total+' katılım',              inline:true},
+      ...(topEv&&topEv.score?[{name:'⭐ En İyi Etkinlik', value:`${topEv.name} — ${_scoreBar(topEv.score)}`, inline:false}]:[]),
+      ...(topM?[{name:'🏆 Ayın En Aktifi', value:`${topMDisplay} · ${topMId[1]} etkinlik`, inline:false}]:[]),
     ],
-    timestamp:new Date().toISOString()
+    footer:{ text:'Lumina Solarias · Aylık Rapor' },
+    timestamp: new Date().toISOString()
   }]}, `📈 ${TR_M[lastMonth.getMonth()]} aylık rapor`);
 }
 
-// Haftalık özet — Pazartesi
+// ── Haftalık özet ─────────────────────────────────────────────────────────────
 let _weeklySent = false;
 function checkWeeklySummary(){
   if(_weeklySent || !webhookOn('onWeekly')) return;
-  const url = getWebhookUrl();
-  if(!url) return;
+  const url = getWebhookUrl(); if(!url) return;
   const now = new Date();
-  if(now.getDay() !== 1) return; // Sadece Pazartesi
-  // Son 7 günü hesapla
+  if(now.getDay()!==1) return;
   const lastWeekStart = new Date(now); lastWeekStart.setDate(now.getDate()-7);
   const lastWeekEnd   = new Date(now); lastWeekEnd.setDate(now.getDate()-1);
   const fmt = d => d.toISOString().split('T')[0];
-  const events = load('events').filter(e=>e.status==='done' && e.date >= fmt(lastWeekStart) && e.date <= fmt(lastWeekEnd));
-  if(!events.length) return; // Etkinlik yoksa gönderme
+  const events = load('events').filter(e=>e.status==='done'&&e.date>=fmt(lastWeekStart)&&e.date<=fmt(lastWeekEnd));
+  if(!events.length) return;
   _weeklySent = true;
-  const totalPart = events.reduce((a,e)=>a+(e.participants||[]).length,0);
-  const avgPart   = (totalPart/events.length).toFixed(1);
-  const topEv     = [...events].sort((a,b)=>parseFloat(b.score||0)-parseFloat(a.score||0))[0];
+  const total = events.reduce((a,e)=>a+(e.participants||[]).length,0);
+  const avg   = (total/events.length).toFixed(1);
+  const topEv = [...events].sort((a,b)=>parseFloat(b.score||0)-parseFloat(a.score||0))[0];
+  const evLines = events.map(e=>`\`${_fmtDate(e.date)}\` **${e.name}** — ${(e.participants||[]).length} kişi${e.score?' · '+e.score+'/10':''}`).join('\n');
   sendWebhook({ embeds:[{
-    title: '📊 Haftalık Özet',
+    title: '📊  Haftalık Özet',
     color: 0x7C3AED,
+    description: `Geçen hafta **${events.length} etkinlik** düzenlendi 🎉`,
     fields:[
-      {name:'🎮 Etkinlik Sayısı',  value: events.length+' etkinlik',   inline:true},
-      {name:'👥 Ortalama Katılım', value: avgPart+' kişi',             inline:true},
-      ...(topEv&&topEv.score?[{name:'⭐ En Yüksek Puan', value: `${topEv.name} (${topEv.score}/10)`, inline:false}]:[])
+      {name:'🎮 Etkinlik Sayısı',  value: events.length+' etkinlik', inline:true},
+      {name:'👥 Ort. Katılım',     value: avg+' kişi',               inline:true},
+      {name:'📊 Toplam Katılım',   value: total+' kişi',             inline:true},
+      ...(topEv&&topEv.score?[{name:'⭐ En Yüksek Puan', value:`${topEv.name} (${topEv.score}/10)`, inline:false}]:[]),
+      {name:'📋 Etkinlik Detayları', value: evLines||'—', inline:false},
     ],
+    footer:{ text:'Lumina Solarias · Haftalık Rapor' },
     timestamp: new Date().toISOString()
-  }]});
+  }]}, `📊 Haftalık özet: ${events.length} etkinlik`);
 }
 
-
-
-function webhookMemberAdd(nick){
+// ── Üye bildirimleri ─────────────────────────────────────────────────────────
+function webhookMemberAdd(nick, memberId){
   if(!webhookOn('onMemberAdd')) return;
-  sendWebhook({embeds:[{title:'👋 Yeni Üye!',color:0xC4B5FD,description:`**${nick}** topluluğa katıldı!`,timestamp:new Date().toISOString()}]}, `👋 ${nick} eklendi`);
+  const members = load('members').filter(m=>!m.archived);
+  const mention = (memberId&&/^\d{15,20}$/.test(memberId)) ? `<@${memberId}>` : `**${nick}**`;
+  sendWebhook({embeds:[{
+    title:'👋  Yeni Üye!',
+    color:0xC4B5FD,
+    description:`${mention} Lumina Solarias topluluğuna katıldı! Hoş geldin 🎉`,
+    fields:[{name:'👥 Toplam Üye', value: members.length+' kişi', inline:true}],
+    footer:{ text:'Lumina Solarias · Üye Sistemi' },
+    timestamp:new Date().toISOString()
+  }]}, `👋 ${nick} eklendi`);
 }
-function webhookMemberRemove(nick){
+function webhookMemberRemove(nick, memberId){
   if(!webhookOn('onMemberRemove')) return;
-  sendWebhook({embeds:[{title:'🗑️ Üye Silindi',color:0x6b5f88,description:`**${nick}** sistemden kaldırıldı.`,timestamp:new Date().toISOString()}]}, `🗑️ ${nick} silindi`);
+  sendWebhook({embeds:[{
+    title:'🗑️  Üye Ayrıldı',
+    color:0x6b5f88,
+    description:`**${nick}** sistemden kaldırıldı.`,
+    footer:{ text:'Lumina Solarias · Üye Sistemi' },
+    timestamp:new Date().toISOString()
+  }]}, `🗑️ ${nick} silindi`);
 }
-function webhookMemberArchive(nick, reason){
+function webhookMemberArchive(nick, reason, memberId){
   if(!webhookOn('onMemberArchive')) return;
-  sendWebhook({embeds:[{title:'📦 Üye Arşivlendi',color:0x6b5f88,fields:[{name:'👤 Üye',value:nick,inline:true},...(reason?[{name:'📝 Sebep',value:reason,inline:true}]:[])],timestamp:new Date().toISOString()}]}, `📦 ${nick} arşivlendi`);
+  const mention = (memberId&&/^\d{15,20}$/.test(memberId)) ? `<@${memberId}>` : nick;
+  sendWebhook({embeds:[{
+    title:'📦  Üye Arşivlendi',
+    color:0x6b5f88,
+    fields:[
+      {name:'👤 Üye', value: mention, inline:true},
+      ...(reason?[{name:'📝 Sebep', value: reason, inline:false}]:[])
+    ],
+    footer:{ text:'Lumina Solarias · Üye Sistemi' },
+    timestamp:new Date().toISOString()
+  }]}, `📦 ${nick} arşivlendi`);
 }
-function webhookMemberBack(nick){
+function webhookMemberBack(nick, memberId){
   if(!webhookOn('onMemberBack')) return;
-  sendWebhook({embeds:[{title:'↩️ Üye Geri Döndü',color:0xC4B5FD,description:`**${nick}** aktif listeye döndü!`,timestamp:new Date().toISOString()}]}, `↩️ ${nick} geri döndü`);
+  const mention = (memberId&&/^\d{15,20}$/.test(memberId)) ? `<@${memberId}>` : `**${nick}**`;
+  sendWebhook({embeds:[{
+    title:'↩️  Üye Geri Döndü!',
+    color:0xC4B5FD,
+    description:`${mention} aktif listeye döndü! Tekrar aramızda 🎊`,
+    footer:{ text:'Lumina Solarias · Üye Sistemi' },
+    timestamp:new Date().toISOString()
+  }]}, `↩️ ${nick} geri döndü`);
 }
-function webhookMilestone(nick, role, count){
+function webhookMilestone(nick, role, count, memberId){
   if(!webhookOn('onMilestone')) return;
-  sendWebhook({embeds:[{title:'🏆 Yeni Rol Kazanıldı!',color:0xFBBF24,fields:[{name:'👤 Üye',value:nick,inline:true},{name:'🏅 Rol',value:role,inline:true},{name:'🎮 Katılım',value:count+' etkinlik',inline:true}],timestamp:new Date().toISOString()}]}, `🏆 ${nick} → ${role}`);
+  const icon = _roleIcon(count);
+  const mention = (memberId&&/^\d{15,20}$/.test(memberId)) ? `<@${memberId}>` : `**${nick}**`;
+  sendWebhook({embeds:[{
+    title:`🏆  Yeni Rozet Kazanıldı! ${icon}`,
+    color:0xFBBF24,
+    description:`${mention} yeni bir role ulaştı, tebrikler! 🎊`,
+    fields:[
+      {name:'👤 Üye',    value: mention,            inline:true},
+      {name:'🏅 Rol',    value: `**${role}**`,      inline:true},
+      {name:'🎮 Katılım',value: count+' etkinlik',  inline:true},
+    ],
+    footer:{ text:'Lumina Solarias · Rozet Sistemi' },
+    timestamp:new Date().toISOString()
+  }]}, `🏆 ${nick} → ${role}`);
 }
 function webhookGameAdd(name, cat){
   if(!webhookOn('onGameAdd')) return;
-  sendWebhook({embeds:[{title:'🎮 Yeni Oyun Eklendi!',color:0x7C3AED,fields:[{name:'🎯 Oyun',value:name,inline:true},{name:'📂 Kategori',value:cat,inline:true}],timestamp:new Date().toISOString()}]}, `🎮 ${name} eklendi`);
+  sendWebhook({embeds:[{
+    title:'🎮  Yeni Oyun Eklendi!',
+    color:0x7C3AED,
+    fields:[
+      {name:'🎯 Oyun',     value: name, inline:true},
+      {name:'📂 Kategori', value: cat,  inline:true},
+    ],
+    footer:{ text:'Lumina Solarias · Oyun Listesi' },
+    timestamp:new Date().toISOString()
+  }]}, `🎮 ${name} eklendi`);
 }
 function webhookHighScore(ev){
   if(!webhookOn('onHighScore')) return;
-  sendWebhook({embeds:[{title:'⭐ Harika Etkinlik!',color:0xFBBF24,fields:[{name:'🎯 Etkinlik',value:ev.name,inline:true},{name:'⭐ Puan',value:ev.score+'/10',inline:true},{name:'👥 Katılım',value:(ev.participants||[]).length+' kişi',inline:true}],timestamp:new Date().toISOString()}]}, `⭐ ${ev.name} → ${ev.score}/10`);
+  sendWebhook({embeds:[{
+    title:'⭐  Harika Bir Etkinlik!',
+    color:0xFBBF24,
+    description:`**${ev.name}** etkinliği yüksek puan aldı! 🎊`,
+    fields:[
+      {name:'⭐ Değerlendirme', value: _scoreBar(ev.score), inline:false},
+      {name:'👥 Katılım',       value: (ev.participants||[]).length+' kişi', inline:true},
+      {name:'🎤 Yönetici',      value: ev.managers||'—',                     inline:true},
+    ],
+    footer:{ text:'Lumina Solarias · '+_fmtDate(ev.date) },
+    timestamp:new Date().toISOString()
+  }]}, `⭐ ${ev.name} → ${ev.score}/10`);
 }
 function webhookLowScore(ev){
   if(!webhookOn('onLowScore')) return;
-  sendWebhook({embeds:[{title:'📉 Düşük Puan',color:0xF87171,description:`**${ev.name}** düşük puan aldı.`,fields:[{name:'⭐ Puan',value:ev.score+'/10',inline:true},{name:'👥 Katılım',value:(ev.participants||[]).length+' kişi',inline:true}],timestamp:new Date().toISOString()}]}, `📉 ${ev.name} → ${ev.score}/10`);
+  sendWebhook({embeds:[{
+    title:'📉  Düşük Puan',
+    color:0xF87171,
+    description:`**${ev.name}** etkinliği beklenenin altında kaldı.`,
+    fields:[
+      {name:'⭐ Puan',    value: _scoreBar(ev.score),                        inline:false},
+      {name:'👥 Katılım', value: (ev.participants||[]).length+' kişi',       inline:true},
+    ],
+    footer:{ text:'Lumina Solarias · '+_fmtDate(ev.date) },
+    timestamp:new Date().toISOString()
+  }]}, `📉 ${ev.name} → ${ev.score}/10`);
 }
 function webhookLowAttend(ev){
   if(!webhookOn('onLowAttend')) return;
-  sendWebhook({embeds:[{title:'📉 Az Katılım',color:0xF87171,description:`**${ev.name}** etkinliğine az katılım oldu.`,fields:[{name:'👥 Katılım',value:(ev.participants||[]).length+' kişi',inline:true}],timestamp:new Date().toISOString()}]}, `📉 Az katılım: ${ev.name}`);
+  sendWebhook({embeds:[{
+    title:'📉  Az Katılım',
+    color:0xF87171,
+    description:`**${ev.name}** etkinliğine beklenenin altında katılım oldu.`,
+    fields:[
+      {name:'👥 Katılım', value: (ev.participants||[]).length+' kişi', inline:true},
+      {name:'🎤 Yönetici',value: ev.managers||'—',                     inline:true},
+    ],
+    footer:{ text:'Lumina Solarias · '+_fmtDate(ev.date) },
+    timestamp:new Date().toISOString()
+  }]}, `📉 Az katılım: ${ev.name}`);
 }
 function webhookRecord(ev, oldRecord){
   if(!webhookOn('onRecord')) return;
+  const allMembers = load('members');
   const pc=(ev.participants||[]).length;
-  sendWebhook({embeds:[{title:'🎉 Yeni Katılım Rekoru!',color:0x34D399,fields:[{name:'🎯 Etkinlik',value:ev.name,inline:true},{name:'👥 Yeni Rekor',value:pc+' kişi',inline:true},{name:'📊 Önceki Rekor',value:oldRecord+' kişiydi',inline:true}],timestamp:new Date().toISOString()}]}, `🎉 Rekor: ${pc} kişi`);
+  const participantMentions = (ev.participants||[]).map(id=>{
+    const m=allMembers.find(x=>x.id===id);
+    if(m && /^\d{15,20}$/.test(m.id)) return `<@${m.id}>`;
+    return m ? `\`${m.nick}\`` : null;
+  }).filter(Boolean);
+  let managerValue = ev.managers||'—';
+  if(ev.managers){ const mgr=allMembers.find(m=>m.nick===ev.managers||m.user===ev.managers); if(mgr&&/^\d{15,20}$/.test(mgr.id)) managerValue=`<@${mgr.id}>`; }
+  sendWebhook({embeds:[{
+    title:'🎉  Yeni Katılım Rekoru!',
+    color:0x34D399,
+    description:`**${ev.name}** etkinliği tüm zamanların rekorunu kırdı! 🏆`,
+    fields:[
+      {name:'👥 Yeni Rekor',  value: `**${pc} kişi**`,                                             inline:true},
+      {name:'📊 Eski Rekor',  value: oldRecord+' kişi',                                             inline:true},
+      {name:'🎤 Yönetici',    value: managerValue,                                                  inline:true},
+      {name:'🎊 Katılanlar',  value: participantMentions.slice(0,20).join('  ')||'—',               inline:false},
+    ],
+    footer:{ text:'Lumina Solarias · Rekor Tahtası' },
+    timestamp:new Date().toISOString()
+  }]}, `🎉 Rekor: ${pc} kişi`);
 }
 function webhookRepeat(name, times){
   if(!webhookOn('onRepeat')) return;
-  sendWebhook({embeds:[{title:'🔄 Tekrar Eden Etkinlik',color:0xFBBF24,description:`**${name}** bu ay **${times}** kez oynandı. Belki farklı bir şey deneyelim?`,timestamp:new Date().toISOString()}]}, `🔄 ${name} ${times}x`);
+  sendWebhook({embeds:[{
+    title:'🔄  Tekrar Eden Etkinlik',
+    color:0xFBBF24,
+    description:`**${name}** bu ay **${times}** kez oynandı!\n> Belki farklı bir şey de deneyelim? 🎲`,
+    footer:{ text:'Lumina Solarias · Etkinlik Analizi' },
+    timestamp:new Date().toISOString()
+  }]}, `🔄 ${name} ${times}x`);
 }
 function webhookGrowth(total){
   if(!webhookOn('onGrowth')) return;
-  sendWebhook({embeds:[{title:'📈 Topluluk Büyüyor!',color:0xC4B5FD,description:`Lumina Solarias **${total} üyeye** ulaştı! 🎉`,timestamp:new Date().toISOString()}]}, `📈 ${total} üye`);
+  sendWebhook({embeds:[{
+    title:'📈  Topluluk Büyüyor!',
+    color:0xC4B5FD,
+    description:`Lumina Solarias **${total} üyeye** ulaştı! 🎉\nBüyümeye devam ediyoruz, hoş geldiniz!`,
+    footer:{ text:'Lumina Solarias · Topluluk' },
+    timestamp:new Date().toISOString()
+  }]}, `📈 ${total} üye`);
 }
 function checkInactive(){
   if(!webhookOn('onInactive')) return;
@@ -2585,9 +3155,16 @@ function checkInactive(){
   const members=load('members').filter(m=>!m.archived);
   const inactive=members.filter(m=>!last3.some(e=>(e.participants||[]).includes(m.id)));
   if(!inactive.length) return;
-  const names=inactive.slice(0,6).map(m=>m.nick).join(', ')+(inactive.length>6?` (+${inactive.length-6} kişi)`:'');
-  sendWebhook({embeds:[{title:'💤 Pasif Üye Uyarısı',color:0x6b5f88,description:`Son 3 etkinliğe katılmayan üyeler:
-${names}`,timestamp:new Date().toISOString()}]}, `💤 ${inactive.length} pasif üye`);
+  // Embed içinde mention listesi oluştur
+  const mentionList=inactive.slice(0,10).map(m=>(m.id&&/^\d{15,20}$/.test(m.id))?`<@${m.id}>`:`**${m.nick}**`).join('\n')+(inactive.length>10?`\n+${inactive.length-10} kişi daha`:'');
+  sendWebhook({embeds:[{
+    title:'💤  Pasif Üye Uyarısı',
+    color:0x6b5f88,
+    description:`Son 3 etkinliğe katılmayan **${inactive.length} üye** var:`,
+    fields:[{name:'👤 Pasif Üyeler', value: mentionList, inline:false}],
+    footer:{ text:'Lumina Solarias · Üye Takibi' },
+    timestamp:new Date().toISOString()
+  }]}, `💤 ${inactive.length} pasif üye`);
 }
 function checkNoEvent(){
   if(!webhookOn('onNoEvent')) return;
@@ -2597,8 +3174,14 @@ function checkNoEvent(){
   const last=events.sort((a,b)=>b.date.localeCompare(a.date))[0];
   const diff=Math.floor((new Date()-new Date(last.date))/(1000*60*60*24));
   if(diff>=10){
-    sendWebhook({embeds:[{title:'⚠️ Etkinliksiz Süre',color:0xFBBF24,description:`**${diff} gündür** etkinlik yapılmadı!
-Son etkinlik: **${last.name}** (${last.date})`,timestamp:new Date().toISOString()}]}, `⚠️ ${diff} gün etkinliksiz`);
+    sendWebhook({embeds:[{
+      title:'⚠️  Etkinliksiz Geçen Süre',
+      color:0xFBBF24,
+      description:`**${diff} gündür** etkinlik yapılmadı! Bir sonrakini ne zaman planlayalım? 🗓️`,
+      fields:[{name:'📅 Son Etkinlik', value:`**${last.name}** — ${_fmtDate(last.date)}`, inline:false}],
+      footer:{ text:'Lumina Solarias · Etkinlik Takibi' },
+      timestamp:new Date().toISOString()
+    }]}, `⚠️ ${diff} gün etkinliksiz`);
   }
 }
 function checkAnniversary(){
@@ -2611,21 +3194,56 @@ function checkAnniversary(){
   const today=new Date();
   if(firstDate.getMonth()===today.getMonth()&&firstDate.getDate()===today.getDate()&&firstDate.getFullYear()<today.getFullYear()){
     const years=today.getFullYear()-firstDate.getFullYear();
-    const members=load('members').filter(m=>!m.archived).length;
-    sendWebhook({embeds:[{title:'🎂 Topluluk Yıldönümü!',color:0xC4B5FD,description:`Lumina Solarias **${years} yaşında!** 🎉
-${events.length} etkinlik, ${members} üye ile büyümeye devam ediyoruz!`,timestamp:new Date().toISOString()}]}, `🎂 ${years}. yıldönümü`);
+    const mCount=load('members').filter(m=>!m.archived).length;
+    sendWebhook({embeds:[{
+      title:`🎂  ${years}. Yıldönümü!`,
+      color:0xC4B5FD,
+      description:`Lumina Solarias **${years} yaşında!** 🎊\nBirlikte büyümeye devam ediyoruz!`,
+      fields:[
+        {name:'🎮 Toplam Etkinlik', value: events.length+' etkinlik', inline:true},
+        {name:'👥 Aktif Üye',       value: mCount+' kişi',            inline:true},
+      ],
+      footer:{ text:'Lumina Solarias · Yıldönümü' },
+      timestamp:new Date().toISOString()
+    }]}, `🎂 ${years}. yıldönümü`);
   }
 }
 
-// ==================== INIT (called by Firebase loader) ====================
-window._bootApp = function(){
-  // Re-read hue from Firebase cache now that it's loaded
-  currentHue = parseInt((window._fbCache&&window._fbCache._hue)||'217');
+
+// ==================== INIT (auth onayından SONRA çağrılır) ====================
+window._bootApp = async function(){
+  // Şimdi tüm verileri yükle
+  const KEYS = {members:'ls3_members', events:'ls3_events', games:'ls3_games', issues:'ls3_issues', solarias:'ls3_solarias'};
+  const loadingOverlay = document.getElementById('loading-overlay');
+  // Mini yükleme göstergesi
+  const mini = document.createElement('div');
+  mini.id='mini-load';
+  mini.style.cssText='position:fixed;inset:0;background:#0d0b14;z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;';
+  mini.innerHTML='<div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;color:#C4B5FD;">Veriler yükleniyor...</div><div style="width:160px;height:3px;background:#1a1529;border-radius:99px;overflow:hidden;"><div style="height:100%;background:#7C3AED;border-radius:99px;animation:loadbar 1.5s ease-in-out infinite;"></div></div>';
+  document.body.appendChild(mini);
+
+  for (const k of Object.keys(KEYS)) {
+    try {
+      const snap = await window._fbGet(window._fbRef(window._fbDb, KEYS[k]));
+      if (snap.exists()) window._fbCache[k] = snap.val();
+    } catch(e) { console.warn('Firebase read error:', k, e); }
+  }
+  // Tema
+  try {
+    const savedHue = localStorage.getItem('ls_personal_hue');
+    if(savedHue) window._fbCache._hue = parseInt(savedHue);
+  } catch(e) {}
+
+  mini.remove();
+
+  currentHue = parseInt((()=>{try{return localStorage.getItem('ls_personal_hue');}catch(e){return null;}})() || (window._fbCache&&window._fbCache._hue) || '265');
   seedIfEmpty();
   initTheme();
-  renderOverview();
   updateSidebar();
-  // Webhook: load url & toggles from Firebase cache
+  applyRoleRestrictions();
+  updateRoleBadge();
+
+  // Webhook yükle
   if(window._fbGet && window._fbRef && window._fbDb){
     Promise.all([
       window._fbGet(window._fbRef(window._fbDb,'ls_webhook_url')),
@@ -2633,15 +3251,503 @@ window._bootApp = function(){
     ]).then(([urlSnap,togSnap])=>{
       if(urlSnap.exists() && window._fbCache) window._fbCache._webhookUrl = urlSnap.val();
       if(togSnap.exists() && window._fbCache) window._fbCache._webhookToggles = togSnap.val();
-      checkUpcomingReminder();
-      checkWeeklySummary();
-      checkNoEvent();
-      checkAnniversary();
-      checkInactive();
-      checkMonthlySummary();
+      if(currentRole==='admin'||currentRole==='solarias'){
+        checkUpcomingReminder();
+        checkWeeklySummary();
+        checkNoEvent();
+        checkAnniversary();
+        checkInactive();
+        checkMonthlySummary();
+      }
     }).catch(()=>{});
   }
 };
+
+// Firebase hazır olunca auth'u başlat (veri yüklemeden)
+window._onFirebaseReady = function(){
+  // Şifreleri cache'den al
+  if(window._fbCache && window._fbCache._passwords){
+    AUTH_PASSWORDS = {...DEFAULT_PASSWORDS, ...window._fbCache._passwords};
+  }
+  // Mevcut session var mı? (admin veya solarias oturumu)
+  try{
+    const r = sessionStorage.getItem('ls_role');
+    if(r && (r==='admin'||r==='solarias') && ROLE_TABS[r]){
+      currentRole = r;
+      window._bootApp();
+      return;
+    }
+  }catch(e){}
+  // Yoksa direkt gözlemci olarak başlat
+  currentRole = 'viewer';
+  window._bootApp();
+};
+
+// ==================== AUTH SYSTEM ====================
+// Şifreler Firebase'den okunur. Yoksa varsayılanlar kullanılır.
+const DEFAULT_PASSWORDS = { admin:'lumina2024admin', solarias:'solarias2024', viewer:'goruntule2024' };
+const PW_FB_KEY = 'ls_passwords';
+let AUTH_PASSWORDS = {...DEFAULT_PASSWORDS};
+let currentRole = 'viewer'; // default: viewer
+let selectedRoleForAuth = null;
+
+// Eski auth uyumluluk stubs (kullanılmıyor artık)
+function selectRole(role){ selectLoginRole(role); }
+function submitAuth(){ submitLoginPanel(); }
+
+// ==================== LOGIN PANEL (yeni sistem) ====================
+let _loginPanelRole = null;
+
+function openLoginPanel(){
+  const panel = document.getElementById('login-panel');
+  const btn = document.getElementById('login-open-btn');
+  if(!panel) return;
+  const isOpen = panel.classList.contains('open');
+  if(!isOpen && btn){
+    const rect = btn.getBoundingClientRect();
+    panel.style.top = (rect.bottom + 6) + 'px';
+  }
+  panel.classList.toggle('open');
+  if(!panel.classList.contains('open')) return;
+  _loginPanelRole = null;
+  document.querySelectorAll('.login-role-chip').forEach(c=>c.classList.remove('selected'));
+  const pw = document.getElementById('login-pw-wrap');
+  if(pw) pw.classList.remove('show');
+  const err = document.getElementById('login-err');
+  if(err) err.textContent='';
+  const inp = document.getElementById('login-pw-input');
+  if(inp) inp.value='';
+}
+
+function selectLoginRole(role){
+  _loginPanelRole = role;
+  document.querySelectorAll('.login-role-chip').forEach(c=>c.classList.remove('selected'));
+  const chip = document.getElementById('lchip-'+role);
+  if(chip) chip.classList.add('selected');
+  const pw = document.getElementById('login-pw-wrap');
+  if(pw) pw.classList.add('show');
+  setTimeout(()=>{const inp=document.getElementById('login-pw-input');if(inp)inp.focus();},80);
+}
+
+function submitLoginPanel(){
+  const pw = document.getElementById('login-pw-input').value;
+  const err = document.getElementById('login-err');
+  if(!_loginPanelRole){err.textContent='Rol seçin.';return;}
+  if(!pw){err.textContent='Şifre boş olamaz.';return;}
+  if(pw === AUTH_PASSWORDS[_loginPanelRole]){
+    currentRole = _loginPanelRole;
+    try{sessionStorage.setItem('ls_role', currentRole);}catch(e){}
+    document.getElementById('login-panel').classList.remove('open');
+    // Reload all data and reapply permissions
+    window._bootApp();
+  } else {
+    err.textContent = '❌ Yanlış şifre.';
+    document.getElementById('login-pw-input').value='';
+    document.getElementById('login-pw-input').focus();
+  }
+}
+
+// Close login panel when clicking outside
+document.addEventListener('click', function(e){
+  const panel = document.getElementById('login-panel');
+  const wrap = document.getElementById('login-panel-wrap');
+  if(panel && panel.classList.contains('open') && wrap && !wrap.contains(e.target)){
+    panel.classList.remove('open');
+  }
+});
+
+function logoutAuth(){
+  if(currentRole==='viewer') return; // already viewer, nothing to do
+  if(!confirm('Çıkış yapmak ve Gözlemci moduna dönmek istediğine emin misin?'))return;
+  currentRole='viewer';
+  try{sessionStorage.removeItem('ls_role');}catch(e){}
+  window._bootApp();
+}
+
+function updateLoginUI(){
+  const badge = document.getElementById('sidebar-role-badge');
+  const loginBtn = document.getElementById('login-open-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+  if(badge){
+    const labels={admin:'👑 Admin',solarias:'⭐ Solarias',viewer:'👁 Gözlemci'};
+    badge.textContent = labels[currentRole]||currentRole;
+    badge.className = 'role-badge '+(currentRole||'viewer');
+    badge.title = currentRole==='viewer' ? 'Gözlemci modundasın' : 'Çıkış yapmak için tıkla';
+  }
+  if(loginBtn) loginBtn.style.display = currentRole==='viewer' ? 'inline-flex' : 'none';
+  if(logoutBtn) logoutBtn.style.display = currentRole!=='viewer' ? 'inline-flex' : 'none';
+}
+
+// Yazma işlemi guard — viewer bu fonksiyonları çağıramaz
+function guardWrite(){
+  if(currentRole==='viewer'){
+    showNotif('🔒','Salt Okunur','Görüntüleyici hesabı değişiklik yapamaz.',2500);
+    return false;
+  }
+  return true;
+}
+
+// Rol kısıtlamaları uygula
+const ROLE_TABS = {
+  admin:   ['overview','members','events','weekly','games','solarias','issues','data','settings'],
+  solarias:['overview','members','events','weekly','games','solarias','issues'],
+  viewer:  ['overview','members','events','weekly'],
+};
+// Sadece admin yazabilir, solarias bazı şeyleri yazabilir
+const READONLY_TABS_FOR_SOLARIAS = ['overview']; // sadece okuma, butonlar gizlenir
+const WRITE_ACTIONS_ADMIN_ONLY = ['saveWebhookUrl','testWebhook','webhookToggleAll','deleteMember','updateMember','saveNewMember','confirmArchive'];
+
+function applyRoleRestrictions(){
+  const allowed = ROLE_TABS[currentRole] || [];
+  const allTabs = ['overview','members','events','weekly','games','solarias','issues','data','settings'];
+  allTabs.forEach(tab=>{
+    const nav = document.getElementById('nav-'+tab);
+    if(!nav)return;
+    if(allowed.includes(tab)){
+      nav.classList.remove('locked');
+      nav.onclick = ()=>showTab(tab);
+    } else {
+      nav.classList.add('locked');
+      nav.onclick = (e)=>{e.stopPropagation();showNotif('🔒','Erişim Kısıtlı','Bu seksiyon için yetkiniz yok.',3000);};
+    }
+  });
+
+  // Ayarlar sekmesi sadece admin
+  const settingsTab = document.getElementById('tab-settings');
+  if(settingsTab){
+    if(currentRole==='admin'){
+      // Admin: tüm seçleri göster, kilit bildirimi kaldır
+      document.querySelectorAll('#tab-settings .sec').forEach(s=>s.style.display='');
+      const notice = document.getElementById('settings-locked-notice');
+      if(notice) notice.remove();
+    } else {
+      document.querySelectorAll('#tab-settings .sec').forEach(s=>s.style.display='none');
+      const notice = document.getElementById('settings-locked-notice');
+      if(!notice){
+        const div = document.createElement('div');
+        div.id='settings-locked-notice';
+        div.className='locked-notice';
+        div.innerHTML='<div class="lock-icon">🔒</div><p>Ayarlar bölümüne erişim için<br><strong>Admin</strong> yetkisi gereklidir.</p>';
+        settingsTab.appendChild(div);
+      }
+    }
+  }
+
+  // Veri Yönetimi sekmesi sadece admin
+  const dataTab = document.getElementById('tab-data');
+  if(dataTab){
+    if(currentRole==='admin'){
+      document.querySelectorAll('#tab-data .sec').forEach(s=>s.style.display='');
+      const dataNotice = document.getElementById('data-locked-notice');
+      if(dataNotice) dataNotice.remove();
+    } else {
+      document.querySelectorAll('#tab-data .sec').forEach(s=>s.style.display='none');
+      const dataNotice = document.getElementById('data-locked-notice');
+      if(!dataNotice){
+        const div = document.createElement('div');
+        div.id='data-locked-notice';
+        div.className='locked-notice';
+        div.innerHTML='<div class="lock-icon">🔒</div><p>Veri Yönetimi bölümüne erişim için<br><strong>Admin</strong> yetkisi gereklidir.</p>';
+        dataTab.appendChild(div);
+      }
+    }
+  }
+
+  // Görüntüleyici: class tabanlı readonly — temizlenebilir
+  if(currentRole==='viewer'){
+    document.body.classList.add('viewer-mode');
+  } else {
+    document.body.classList.remove('viewer-mode');
+  }
+
+  // Şifre yönetimi sadece admin
+  const pwSec = document.getElementById('pw-manage-sec');
+  if(pwSec) pwSec.style.display = currentRole==='admin' ? 'block' : 'none';
+
+  // İlk tab
+  const firstAllowed = allowed[0] || 'overview';
+  showTab(firstAllowed);
+}
+
+function updateRoleBadge(){
+  updateLoginUI();
+}
+
+async function changePassword(role){
+  if(currentRole!=='admin'){showNotif('🔒','Yetersiz Yetki','Şifre değişikliği sadece admin yapabilir.',3000);return;}
+  const input = document.getElementById('pw-'+role+'-new');
+  const msg = document.getElementById('pw-change-msg');
+  const newPw = input.value.trim();
+  if(!newPw||newPw.length<4){msg.style.color='var(--red)';msg.textContent='Şifre en az 4 karakter olmalı.';return;}
+  AUTH_PASSWORDS[role]=newPw;
+  try{
+    if(!window._fbDb || !window._fbRef || !window._fbSet) throw new Error('Firebase hazır değil');
+    // Her rolü tek tek yaz (path: ls_passwords/admin vb.)
+    await window._fbSet(window._fbRef(window._fbDb, PW_FB_KEY + '/' + role), newPw);
+    if(window._fbCache) window._fbCache._passwords = {...(window._fbCache._passwords||{}), [role]: newPw};
+    msg.style.color='var(--green)';
+    const rName={admin:'Admin',solarias:'Solarias',viewer:'Görüntüleyici'};
+    msg.textContent=`✓ ${rName[role]} şifresi güncellendi.`;
+    input.value='';
+  }catch(e){
+    console.error('changePassword error:', e);
+    msg.style.color='var(--red)';
+    msg.textContent='Firebase hatası: ' + (e.message||'tekrar dene.');
+  }
+  setTimeout(()=>msg.textContent='',4000);
+}
+
+// ==================== VERİ YÖNETİMİ ====================
+
+// --- DIŞA AKTARMA ---
+function exportData(scope){
+  const allKeys = ['members','events','games','issues','solarias'];
+  let exportObj = { _meta: { exportedAt: new Date().toISOString(), scope, version: 'ls3' } };
+
+  if(scope === 'all'){
+    allKeys.forEach(k => exportObj[k] = load(k));
+  } else {
+    exportObj[scope] = load(scope);
+  }
+
+  const json = JSON.stringify(exportObj, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `lumina-solarias-${scope}-${dateStr}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  const counts = scope === 'all'
+    ? allKeys.map(k => `${k}: ${(exportObj[k]||[]).length}`).join(' · ')
+    : `${scope}: ${(exportObj[scope]||[]).length} kayıt`;
+  const info = document.getElementById('export-info');
+  if(info) info.innerHTML = `✓ İndirildi — <span style="color:var(--accent)">${counts}</span>`;
+  showNotif('📤','Dışa Aktarıldı',`${scope === 'all' ? 'Tüm veriler' : scope} başarıyla indirildi.`,3000);
+}
+
+// --- İÇE AKTARMA ---
+let _importData = null;
+
+function previewImport(input){
+  const file = input.files[0];
+  if(!file)return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      _importData = data;
+      const preview = document.getElementById('import-preview');
+      const body = document.getElementById('import-preview-body');
+      const keys = ['members','events','games','issues','solarias'];
+      const meta = data._meta || {};
+      let html = '';
+      if(meta.exportedAt) html += `<div>📅 <strong>Tarih:</strong> ${new Date(meta.exportedAt).toLocaleString('tr-TR')}</div>`;
+      if(meta.scope) html += `<div>🎯 <strong>Kapsam:</strong> ${meta.scope}</div>`;
+      html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">';
+      let found = false;
+      keys.forEach(k => {
+        if(data[k]){
+          found = true;
+          const arr = Array.isArray(data[k]) ? data[k] : Object.values(data[k]);
+          html += `<div>• <strong>${k}</strong>: ${arr.length} kayıt</div>`;
+        }
+      });
+      if(!found){ html += '<div style="color:var(--red);">⚠ Tanınan veri bulunamadı.</div>'; _importData = null; }
+      html += '</div>';
+      body.innerHTML = html;
+      preview.style.display = 'block';
+    } catch(err){
+      showNotif('❌','Hata','Geçersiz JSON dosyası.',3000);
+      _importData = null;
+    }
+  };
+  reader.readAsText(file);
+}
+
+function cancelImport(){
+  _importData = null;
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-file').value = '';
+}
+
+async function confirmImport(){
+  if(!_importData){ showNotif('❌','Hata','Önce bir dosya seç.',2000); return; }
+  if(!confirm('⚠️ Mevcut veriler silinecek ve dosyadaki verilerle değiştirilecek.\n\nDevam etmek istediğine emin misin?')) return;
+
+  const FBKEYS = {members:'ls3_members',events:'ls3_events',games:'ls3_games',issues:'ls3_issues',solarias:'ls3_solarias'};
+  const keys = Object.keys(FBKEYS);
+  let imported = 0;
+
+  for(const k of keys){
+    if(_importData[k] !== undefined){
+      const val = Array.isArray(_importData[k]) ? _importData[k] : Object.values(_importData[k]);
+      window._fbCache[k] = val;
+      try{ await window._fbSet(window._fbRef(window._fbDb, FBKEYS[k]), val); imported++; }catch(e){}
+    }
+  }
+
+  cancelImport();
+  showNotif('📥','İçe Aktarıldı',`${imported} tablo başarıyla geri yüklendi.`,4000);
+  // Aktif sekmeyi yenile
+  const active = document.querySelector('.tab.active');
+  if(active){ renderTab(active.id.replace('tab-','')); }
+  renderDataTab();
+}
+
+// Drag & drop desteği
+document.addEventListener('DOMContentLoaded', ()=>{
+  const dz = document.getElementById('import-drop-zone');
+  if(!dz) return;
+  dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.style.borderColor='var(--p400)'; });
+  dz.addEventListener('dragleave', ()=>{ dz.style.borderColor=''; });
+  dz.addEventListener('drop', e=>{
+    e.preventDefault(); dz.style.borderColor='';
+    const file = e.dataTransfer.files[0];
+    if(file){ const fi = document.getElementById('import-file'); fi.files = e.dataTransfer.files; previewImport(fi); }
+  });
+});
+
+// --- ŞABLONLAR ---
+const TEMPLATES_FB_KEY = 'ls_templates';
+
+function loadTemplates(){
+  try{ return JSON.parse(localStorage.getItem('ls_templates')||'[]'); }catch(e){ return []; }
+}
+function saveTemplatesLocal(arr){
+  try{ localStorage.setItem('ls_templates', JSON.stringify(arr)); }catch(e){}
+  // Firebase'e de kaydet
+  if(window._fbDb) window._fbSet(window._fbRef(window._fbDb, TEMPLATES_FB_KEY), arr).catch(()=>{});
+}
+
+function renderTemplateList(){
+  const wrap = document.getElementById('template-list');
+  if(!wrap) return;
+  const templates = loadTemplates();
+  if(!templates.length){
+    wrap.innerHTML = '<div class="empty">Henüz şablon yok. ＋ Şablon Kaydet butonuyla ekleyebilirsin.</div>';
+    return;
+  }
+  wrap.innerHTML = templates.map((t,i) => `
+    <div class="ec" style="cursor:default;">
+      <div class="ec-db" style="min-width:44px;">
+        <div style="font-size:20px;">📋</div>
+      </div>
+      <div class="ec-info">
+        <div class="ec-name">${t.name}</div>
+        <div class="ec-meta">${t.evname||''}${t.type?' · '+t.type:''}${t.time?' · '+t.time:''}</div>
+        ${t.notes?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${t.notes}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="btn btn-green btn-sm" onclick="useTemplate(${i})" title="Etkinlik eklerken kullan">▶ Kullan</button>
+        <button class="btn btn-d btn-sm" onclick="deleteTemplate(${i})" title="Şablonu sil">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openSaveTemplate(){
+  // Mevcut açık etkinlik varsa doldur
+  openModal('modal-save-template');
+}
+
+function saveTemplate(){
+  const name = document.getElementById('tpl-name').value.trim();
+  if(!name){ showNotif('⚠','Eksik','Şablon adı zorunlu.',2000); return; }
+  const tpl = {
+    name,
+    evname: document.getElementById('tpl-evname').value.trim(),
+    type: document.getElementById('tpl-type').value,
+    time: document.getElementById('tpl-time').value,
+    notes: document.getElementById('tpl-notes').value.trim(),
+    createdAt: new Date().toISOString()
+  };
+  const arr = loadTemplates();
+  arr.push(tpl);
+  saveTemplatesLocal(arr);
+  closeModal('modal-save-template');
+  renderTemplateList();
+  showNotif('📋','Şablon Kaydedildi',`"${name}" şablonu oluşturuldu.`,3000);
+}
+
+function deleteTemplate(i){
+  if(!confirm('Bu şablonu silmek istediğine emin misin?')) return;
+  const arr = loadTemplates();
+  arr.splice(i,1);
+  saveTemplatesLocal(arr);
+  renderTemplateList();
+}
+
+function useTemplate(i){
+  const t = loadTemplates()[i];
+  if(!t) return;
+  // Etkinlik ekleme modalını aç ve şablonu uygula
+  openAddEventFlow();
+  setTimeout(()=>{
+    const gameSelect = document.getElementById('eva-game');
+    const nameInput = document.getElementById('eva-name');
+    const typeSelect = document.getElementById('eva-type');
+    const timeInput = document.getElementById('eva-time');
+    if(t.evname && nameInput){ nameInput.value = t.evname; }
+    if(t.type && typeSelect){ typeSelect.value = t.type; }
+    if(t.time && timeInput){ timeInput.value = t.time; }
+    showNotif('📋','Şablon Uygulandı',`"${t.name}" şablonu yüklendi.`,2500);
+  }, 300);
+}
+
+// --- FİREBASE DURUM ---
+function renderFbStatus(){
+  const body = document.getElementById('fb-status-body');
+  if(!body) return;
+  const keys = ['members','events','games','issues','solarias'];
+  const labels = {members:'Üyeler',events:'Etkinlikler',games:'Oyunlar',issues:'Olumsuzluklar',solarias:'Solarias'};
+  let html = '';
+  keys.forEach(k=>{
+    const arr = load(k);
+    const archived = k==='members' ? arr.filter(m=>m.archived).length : 0;
+    const active = arr.length - archived;
+    html += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);">
+      <span style="color:var(--text2);">${labels[k]}</span>
+      <span style="color:var(--accent);font-weight:600;">${active}${archived?' <span style="color:var(--text3);font-size:11px;">(+'+archived+' arşiv)</span>':''}</span>
+    </div>`;
+  });
+  const totalEvents = load('events').filter(e=>e.status==='done').length;
+  const totalPart = load('events').filter(e=>e.status==='done').reduce((s,e)=>s+(e.participants||[]).length,0);
+  html += `<div style="margin-top:10px;padding:10px;background:var(--card2);border-radius:var(--rs);font-size:12px;color:var(--text3);">
+    Son güncelleme: ${new Date().toLocaleTimeString('tr-TR')} &nbsp;·&nbsp; 
+    Toplam tamamlanan etkinlik: <strong style="color:var(--accent)">${totalEvents}</strong> &nbsp;·&nbsp;
+    Toplam katılım: <strong style="color:var(--accent)">${totalPart}</strong>
+  </div>`;
+  body.innerHTML = html;
+}
+
+function renderDataTab(){
+  renderTemplateList();
+  renderFbStatus();
+  // import-sec admin değilse gizle
+  const importSec = document.getElementById('import-sec');
+  if(importSec) importSec.style.display = currentRole==='admin' ? 'block' : 'none';
+  const saveBtn = document.getElementById('save-template-btn');
+  if(saveBtn) saveBtn.style.display = currentRole==='admin' ? 'inline-flex' : 'none';
+}
+
+// ==================== MOBILE SIDEBAR ====================
+function toggleSidebar(){
+  const sb=document.querySelector('.sidebar');
+  const ov=document.getElementById('mob-overlay');
+  sb.classList.toggle('mob-open');
+  ov.classList.toggle('open');
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('mob-open');
+  document.getElementById('mob-overlay').classList.remove('open');
+}
+// Close sidebar when a nav item is clicked on mobile
+document.querySelectorAll('.ni').forEach(el=>{
+  el.addEventListener('click',()=>{if(window.innerWidth<=768)closeSidebar();});
+});
 
 // ==================== THEME ====================
 const THEME_PRESETS=[
@@ -2656,13 +3762,13 @@ const THEME_PRESETS=[
   {name:'Gül',hue:346,r:253,g:164,b:175},
   {name:'İndiği',hue:295,r:216,g:180,b:254},
 ];
-let currentHue=parseInt((window._fbCache&&window._fbCache._hue)||'217');
+let currentHue=parseInt((()=>{try{return localStorage.getItem('ls_personal_hue');}catch(e){return null;}})() || (window._fbCache&&window._fbCache._hue) || '265');
 
 function setHue(hue){
   hue=parseInt(hue);
   currentHue=hue;
   if(window._fbCache) window._fbCache._hue=hue;
-  if(window._fbDb) window._fbSet(window._fbRef(window._fbDb,'ls_hue'),hue).catch(()=>{});
+  try{localStorage.setItem('ls_personal_hue',hue);}catch(e){};
   // Find nearest preset for rgb values
   let best=THEME_PRESETS[0];
   let bestDist=999;
@@ -2719,7 +3825,7 @@ function hslToRgb(h,s,l){
 function setPreset(p){
   currentHue=p.hue;
   if(window._fbCache) window._fbCache._hue=p.hue;
-  if(window._fbDb) window._fbSet(window._fbRef(window._fbDb,'ls_hue'),p.hue).catch(()=>{});
+  try{localStorage.setItem('ls_personal_hue',p.hue);}catch(e){};
   applyTheme(p.hue,p.r,p.g,p.b);
   document.getElementById('hue-val').textContent=p.hue+'°';
   document.getElementById('hue-slider').value=p.hue;
@@ -2734,7 +3840,10 @@ function toggleThemePopup(e){
   e.stopPropagation();
   document.getElementById('theme-popup').classList.toggle('open');
 }
-document.addEventListener('click',()=>document.getElementById('theme-popup').classList.remove('open'));
+document.addEventListener('click',(e)=>{
+  const tp=document.getElementById('theme-popup');
+  if(tp && !tp.contains(e.target)) tp.classList.remove('open');
+});
 
 function updateThemeDot(){
   const dot=document.getElementById('theme-btn-dot');
@@ -2788,6 +3897,30 @@ function initTheme(){
     <div class="fa">
       <button class="btn btn-g" onclick="closeModal('modal-quick-member')">İptal</button>
       <button class="btn btn-p" onclick="saveQuickMember()">Ekle ve Seç</button>
+    </div>
+  </div>
+</div>
+<!-- Save Template Modal -->
+<div class="mbg" id="modal-save-template">
+  <div class="modal">
+    <div class="modal-t">📋 Şablon Kaydet</div>
+    <div class="fg">
+      <div class="fgrp fgf"><label>Şablon Adı *</label><input id="tpl-name" placeholder="Örn: Haftalık FPS Gecesi"></div>
+      <div class="fgrp fgf"><label>Etkinlik Adı</label><input id="tpl-evname" placeholder="Valorant Maçı"></div>
+      <div class="fgrp"><label>Tür</label>
+        <select id="tpl-type">
+          <option value="Rekabetçi">Rekabetçi</option>
+          <option value="Eğlence">Eğlence</option>
+          <option value="Turnuva">Turnuva</option>
+          <option value="Özel">Özel</option>
+        </select>
+      </div>
+      <div class="fgrp"><label>Varsayılan Saat</label><input id="tpl-time" placeholder="21:00" type="time"></div>
+      <div class="fgrp fgf"><label>Notlar</label><textarea id="tpl-notes" rows="2" placeholder="Opsiyonel açıklama..."></textarea></div>
+    </div>
+    <div class="fa">
+      <button class="btn btn-g" onclick="closeModal('modal-save-template')">İptal</button>
+      <button class="btn btn-p" onclick="saveTemplate()">Kaydet</button>
     </div>
   </div>
 </div>
