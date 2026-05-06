@@ -262,6 +262,51 @@ select option{background:var(--bg2);}
 .sort-btn.active{background:rgba(var(--p-r),var(--p-g),var(--p-b),0.15);color:var(--p200);border-color:var(--p400);}
 .ev-detail-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:26px;width:100%;max-width:620px;max-height:92vh;overflow-y:auto;}
 
+/* ===== SOLARİAS COLLAPSIBLE ===== */
+.sol-collapse-wrap{background:var(--card2);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:8px;overflow:hidden;cursor:pointer;transition:border-color .15s;}
+.sol-collapse-wrap:hover{border-color:var(--border2);}
+.sol-collapse-header{display:flex;align-items:center;gap:12px;padding:12px 14px;}
+.sol-collapse-body{padding:0 14px 12px;border-top:1px solid var(--border);}
+.sol-collapse-body.hidden{display:none;}
+.sol-note-area{background:var(--card);border:1px solid var(--border2);border-radius:var(--rs);padding:8px 10px;font-size:12.5px;color:var(--text2);min-height:36px;white-space:pre-wrap;cursor:pointer;}
+.sol-note-area:hover{border-color:var(--p400);}
+.sol-note-input{width:100%;background:var(--card);border:1px solid var(--p400);border-radius:var(--rs);color:var(--text);padding:8px 10px;font-size:12.5px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:60px;outline:none;}
+
+/* ===== SOLARİAS DETAIL MODAL ===== */
+.sol-detail-modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:26px;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;}
+
+/* ===== DÖNEM ANALİZİ ===== */
+.period-card{background:var(--card2);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;display:flex;flex-direction:column;gap:4px;}
+.period-arrow-up{color:var(--green);font-size:11px;font-weight:600;}
+.period-arrow-down{color:var(--red);font-size:11px;font-weight:600;}
+.period-arrow-same{color:var(--text3);font-size:11px;font-weight:600;}
+
+/* ===== ETKİNLİK GALERİ ===== */
+.ev-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:10px;}
+.ev-gallery-img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--rs);cursor:pointer;border:1px solid var(--border);transition:transform .15s,border-color .15s;}
+.ev-gallery-img:hover{transform:scale(1.03);border-color:var(--border2);}
+.ev-gallery-lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.ev-gallery-lightbox img{max-width:90vw;max-height:85vh;border-radius:var(--r);box-shadow:0 8px 40px rgba(0,0,0,0.6);}
+
+/* ===== ALINTI (KOMİK ANLAR) ===== */
+.quote-item{background:rgba(var(--p-r),var(--p-g),var(--p-b),0.07);border-left:3px solid var(--p400);border-radius:0 var(--rs) var(--rs) 0;padding:10px 12px;margin-bottom:8px;position:relative;}
+.quote-text{font-size:13px;color:var(--text);line-height:1.5;font-style:italic;}
+.quote-author{font-size:11px;color:var(--text3);margin-top:4px;}
+.quote-del{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px;}
+.quote-del:hover{color:var(--red);}
+
+/* ===== ANNOUNCEMENt REACTIONS ===== */
+.ann-reactions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+.ann-react-btn{display:inline-flex;align-items:center;gap:0;padding:5px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--card2);cursor:pointer;font-size:13px;transition:all .15s;user-select:none;color:var(--text2);}
+.ann-react-btn:hover{background:rgba(var(--p-r),var(--p-g),var(--p-b),0.1);border-color:var(--border2);color:var(--text);}
+.ann-react-btn.selected{background:rgba(var(--p-r),var(--p-g),var(--p-b),0.18);border-color:var(--p400);color:var(--p200);}
+.ann-react-count{font-size:12px;font-weight:600;min-width:0;margin-left:5px;}
+@keyframes reactCountPop{0%{transform:scale(0.5);opacity:0;}60%{transform:scale(1.3);}100%{transform:scale(1);opacity:1;}}
+
+/* ===== ÇARK ===== */
+.wheel-sec{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-top:18px;}
+@keyframes pickPop{0%{transform:scale(0.85);opacity:0;}60%{transform:scale(1.06);}100%{transform:scale(1);opacity:1;}}
+
 .theme-btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 14px;margin:10px 10px 12px;border-radius:var(--rs);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s;width:calc(100% - 20px);}
 .theme-btn:hover{background:var(--card2);color:var(--text);border-color:var(--border2);}
 .theme-btn-dot{width:12px;height:12px;border-radius:50%;background:var(--p400);flex-shrink:0;}
@@ -891,6 +936,13 @@ body.viewer-mode .member-action-col { display: none !important; }
     <div class="sec-h"><div class="sec-t">Tüm Oyunlar</div></div>
     <div id="game-list-wrap"></div>
   </div>
+  <!-- RASTGELE OYUN SEÇİCİ -->
+  <div class="wheel-sec">
+    <div class="sec-h"><div class="sec-t">🎲 Rastgele Oyun Seç</div><button class="btn btn-p" onclick="pickRandomGame()">🎰 Seç!</button></div>
+    <div id="random-game-result" style="margin-top:14px;min-height:60px;display:flex;align-items:center;justify-content:center;">
+      <div style="color:var(--text3);font-size:13px;">Butona basarak rastgele bir oyun seç!</div>
+    </div>
+  </div>
 </div>
 
 <!-- SOLARIAS -->
@@ -910,6 +962,11 @@ body.viewer-mode .member-action-col { display: none !important; }
         <canvas id="chart-sol"></canvas>
       </div>
     </div>
+  </div>
+  <!-- DÖNEM ANALİZİ -->
+  <div class="sec" style="margin-top:18px;">
+    <div class="sec-h"><div class="sec-t">📊 Karşılaştırmalı Dönem Analizi</div><span style="font-size:12px;color:var(--text3);">Bu ay geçen aya göre nasıldı?</span></div>
+    <div id="sol-period-analysis"></div>
   </div>
 </div>
 
@@ -1397,6 +1454,7 @@ body.viewer-mode .member-action-col { display: none !important; }
           <option>Etkinlik Koordinatörü</option><option>Solarias</option>
         </select>
       </div>
+      <div class="fgrp fgf"><label>Discord ID <span style="color:var(--text3);font-weight:400;">(opsiyonel, etiketleme için)</span></label><input id="sol-discordid-in" placeholder="459319962411073546"></div>
     </div>
     <div class="fa">
       <button class="btn btn-g" onclick="closeModal('modal-add-sol')">İptal</button>
@@ -1417,6 +1475,7 @@ body.viewer-mode .member-action-col { display: none !important; }
           <option>Etkinlik Koordinatörü</option><option>Solarias</option>
         </select>
       </div>
+      <div class="fgrp fgf"><label>Discord ID <span style="color:var(--text3);font-weight:400;">(opsiyonel, etiketleme için)</span></label><input id="esol-discordid" placeholder="459319962411073546"></div>
     </div>
     <div class="fa">
       <button class="btn btn-d btn-sm" onclick="deleteSolarias(document.getElementById('esol-idx').value)">Sil</button>
@@ -2094,6 +2153,9 @@ function openEvDetail(idx){
   let body='';
   const isViewer=currentRole==='viewer';
   if(e.status==='done'){
+    const evKey = 'ev_'+(e.date+'_'+e.name).replace(/[^a-zA-Z0-9_]/g,'_');
+    const gallery = (window._fbCache && window._fbCache._evGallery && window._fbCache._evGallery[evKey]) || [];
+    const quotes = (window._fbCache && window._fbCache._evQuotes && window._fbCache._evQuotes[evKey]) || [];
     body=`
       <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">${fmtDateLong(e.date)}${e.time?' · '+e.time:''}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;margin-top:10px;">
@@ -2107,7 +2169,43 @@ function openEvDetail(idx){
         ${issues.map(i=>`<div style="font-size:13px;margin-bottom:4px;">${i.issue}</div>${i.cause?`<div style="font-size:11px;color:var(--text3);">Sebep: ${i.cause}</div>`:''}`).join('')}
       </div>`:''}
       <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Katılanlar (${parts.length} kişi):</div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">${parts.map(n=>`<span class="badge b-k">${n}</span>`).join('')||'—'}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">${parts.map(n=>`<span class="badge b-k">${n}</span>`).join('')||'—'}</div>
+
+      <!-- GALERİ + ALINTALAR -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px;">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text2);">🖼 Galeri</div>
+            ${!isViewer?`<label class="btn btn-g btn-sm" style="cursor:pointer;">📷 Resim Ekle<input type="file" accept="image/*" multiple style="display:none;" onchange="addEvImages('${evKey}',this)"></label>`:''}
+          </div>
+          <div class="ev-gallery-grid" id="ev-gallery-${evKey}">
+            ${gallery.map((src,gi)=>`<img class="ev-gallery-img" src="${src}" onclick="openGalleryLightbox('${evKey}',${gi})" title="Resme tıkla">${!isViewer?`<button onclick="deleteEvImage('${evKey}',${gi})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:4px;padding:1px 5px;font-size:10px;cursor:pointer;">✕</button>`:''}`).join('')}
+            ${gallery.length===0?`<div style="font-size:11px;color:var(--text3);grid-column:1/-1;padding:8px 0;">${isViewer?'Henüz resim yok.':'Resim eklemek için yukarıdaki butonu kullan.'}</div>`:''}
+          </div>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text2);">💬 Unutulmaz Anlar</div>
+            ${!isViewer?`<button class="btn btn-g btn-sm" onclick="showAddQuoteForm('${evKey}')">＋ Ekle</button>`:''}
+          </div>
+          <div id="ev-quotes-${evKey}">
+            ${quotes.map((q,qi)=>`<div class="quote-item">
+              <div class="quote-text">"${escHtml(q.text)}"</div>
+              ${q.author?`<div class="quote-author">— ${escHtml(q.author)}</div>`:''}
+              ${!isViewer?`<button class="quote-del" onclick="deleteEvQuote('${evKey}',${qi})">✕</button>`:''}
+            </div>`).join('')}
+            ${quotes.length===0?`<div style="font-size:11px;color:var(--text3);padding:8px 0;">Henüz alıntı yok.</div>`:''}
+          </div>
+          ${!isViewer?`<div id="add-quote-form-${evKey}" style="display:none;margin-top:8px;">
+            <input id="quote-text-${evKey}" placeholder="Komik/unutulmaz an..." style="margin-bottom:6px;">
+            <input id="quote-author-${evKey}" placeholder="Kişi (opsiyonel)...">
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <button class="btn btn-g btn-sm" onclick="document.getElementById('add-quote-form-${evKey}').style.display='none'">İptal</button>
+              <button class="btn btn-p btn-sm" onclick="saveEvQuote('${evKey}')">Kaydet</button>
+            </div>
+          </div>`:''}
+        </div>
+      </div>
     `;
     document.getElementById('evd-complete-form').style.display='none';
   } else {
@@ -2438,6 +2536,7 @@ function renderGames(){
     }).join('')}
     </div>`;
   }).join('');
+
 }
 
 function openAddGame(){document.getElementById('ag-name').value='';openModal('modal-add-game');}
@@ -2518,21 +2617,111 @@ function gameDrop(e,targetIdx){
   renderGames();
 }
 
+// ==================== RASTGELE OYUN SEÇİCİ ====================
+function pickRandomGame(){
+  const games = load('games');
+  if(!games.length){ notify('⚠','Oyun Yok','Önce oyun listesine oyun ekle.',2000); return; }
+  const wrap = document.getElementById('random-game-result');
+  if(!wrap) return;
+
+  // Kısa shuffle animasyonu
+  let count = 0;
+  const maxFlash = 10;
+  const interval = setInterval(()=>{
+    const rand = games[Math.floor(Math.random()*games.length)];
+    wrap.innerHTML = `<div style="text-align:center;opacity:.6;font-size:15px;font-family:'Syne',sans-serif;color:var(--text2);">${rand.name}</div>`;
+    count++;
+    if(count >= maxFlash){
+      clearInterval(interval);
+      const winner = games[Math.floor(Math.random()*games.length)];
+      wrap.innerHTML = `
+        <div style="text-align:center;animation:pickPop .35s ease;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.07em;">Seçilen Oyun</div>
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent);">🎯 ${winner.name}</div>
+          ${winner.cat?`<div style="font-size:11px;color:var(--text3);margin-top:4px;">${winner.cat}</div>`:''}
+        </div>`;
+      notify('🎲','Oyun Seçildi',winner.name+'!','#c4b5fd');
+    }
+  }, 80);
+}
+
 // ==================== SOLARIAS ====================
+function getSolariasNotes(){
+  try{ return JSON.parse(localStorage.getItem('ls_sol_notes')||'{}'); }catch(e){ return {}; }
+}
+function saveSolariasNotes(obj){
+  try{ localStorage.setItem('ls_sol_notes', JSON.stringify(obj)); }catch(e){}
+  if(window._fbDb && window._fbSet && window._fbRef)
+    window._fbSet(window._fbRef(window._fbDb,'ls_sol_notes'), obj).catch(()=>{});
+}
+
+function toggleSolCard(i){
+  const body = document.getElementById('sol-body-'+i);
+  const icon = document.getElementById('sol-icon-'+i);
+  if(!body) return;
+  body.classList.toggle('hidden');
+  if(icon) icon.textContent = body.classList.contains('hidden') ? '▸' : '▾';
+}
+
+function startEditSolNote(i){
+  if(!guardWrite()) return;
+  const notes = getSolariasNotes();
+  const cur = notes['sol_'+i]||'';
+  const noteArea = document.getElementById('sol-note-area-'+i);
+  if(!noteArea) return;
+  noteArea.style.display='none';
+  const inp = document.getElementById('sol-note-inp-'+i);
+  if(inp){ inp.style.display=''; inp.value=cur; inp.focus(); }
+}
+
+function saveSolNote(i){
+  const inp = document.getElementById('sol-note-inp-'+i);
+  if(!inp) return;
+  const val = inp.value.trim();
+  const notes = getSolariasNotes();
+  notes['sol_'+i] = val;
+  saveSolariasNotes(notes);
+  const noteArea = document.getElementById('sol-note-area-'+i);
+  if(noteArea){ noteArea.textContent = val||'Not eklemek için tıkla...'; noteArea.style.display=''; }
+  inp.style.display='none';
+}
+
 function renderSolarias(){
   const solarias=load('solarias');
   const events=load('events');
+  const notes = getSolariasNotes();
   const solList=document.getElementById('sol-list');
   solList.innerHTML=solarias.map((s,i)=>{
     const count=events.filter(e=>e.status==='done'&&(e.managers||'').toLowerCase().includes(s.name.toLowerCase())).length;
-    return`<div class="sol-card" draggable="true" data-sol-idx="${i}" ondragstart="solDragStart(event,${i})" ondragover="solDragOver(event)" ondrop="solDrop(event,${i})" style="cursor:grab;">
-      <span style="font-size:16px;color:var(--text3);cursor:grab;margin-right:2px;">⠿</span>
-      <div class="sol-avatar">${s.name.charAt(0)}</div>
-      <div class="sol-info"><div class="sol-name">${s.name}</div><div class="sol-role">${s.role}</div></div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <div class="sol-count">${count}</div>
-        <button class="btn btn-g btn-sm" onclick="openEditSolarias(${i})">✎</button>
-        <button class="btn btn-d btn-sm" onclick="deleteSolarias(${i})">✕</button>
+    const note = notes['sol_'+i]||'';
+    const myEvents = events.filter(e=>e.status==='done'&&(e.managers||'').toLowerCase().includes(s.name.toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date));
+    return`<div class="sol-collapse-wrap" draggable="true" data-sol-idx="${i}" ondragstart="solDragStart(event,${i})" ondragover="solDragOver(event)" ondrop="solDrop(event,${i})">
+      <div class="sol-collapse-header" onclick="toggleSolCard(${i})">
+        <span style="font-size:13px;color:var(--text3);">⠿</span>
+        <div class="sol-avatar">${s.name.charAt(0)}</div>
+        <div class="sol-info" style="flex:1;"><div class="sol-name">${s.name}</div><div class="sol-role">${s.role}</div></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="sol-count">${count}</div>
+          <button class="btn btn-g btn-sm" onclick="event.stopPropagation();openEditSolarias(${i})">✎</button>
+          <span id="sol-icon-${i}" style="font-size:12px;color:var(--text3);min-width:12px;">▸</span>
+        </div>
+      </div>
+      <div class="sol-collapse-body hidden" id="sol-body-${i}">
+        <div style="margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:700;">📝 Not</div>
+          <div class="sol-note-area" id="sol-note-area-${i}" onclick="startEditSolNote(${i})">${note||'<span style="color:var(--text3);">Not eklemek için tıkla...</span>'}</div>
+          <textarea class="sol-note-input" id="sol-note-inp-${i}" style="display:none;" placeholder="Not yaz..." onblur="saveSolNote(${i})" onkeydown="if(event.key==='Enter'&&event.ctrlKey)saveSolNote(${i})"></textarea>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:700;">🎮 Yönetilen Etkinlikler (${count})</div>
+          ${myEvents.length===0?'<div style="font-size:12px;color:var(--text3);padding:4px 0;">Henüz etkinlik yok.</div>':
+          myEvents.slice(0,8).map(e=>`<div onclick="openEvDetailById('${e.date}_${e.name}')" style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--card);border-radius:var(--rs);border:1px solid var(--border);margin-bottom:5px;cursor:pointer;" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span style="font-size:10px;color:var(--text3);min-width:70px;">${fmtDateShort(e.date)}</span>
+            <span style="font-size:12.5px;font-weight:500;flex:1;">${e.name}</span>
+            <span style="font-size:10px;color:var(--text3);">${(e.participants||[]).length} kişi</span>
+          </div>`).join('')}
+          ${myEvents.length>8?`<div style="font-size:11px;color:var(--text3);padding:4px 0;">+${myEvents.length-8} etkinlik daha</div>`:''}
+        </div>
       </div>
     </div>`;
   }).join('')||'<div class="empty">Solarias üyesi yok.</div>';
@@ -2540,7 +2729,6 @@ function renderSolarias(){
   destroyChart('chart-sol');
   const counts=solarias.map(s=>events.filter(e=>e.status==='done'&&(e.managers||'').toLowerCase().includes(s.name.toLowerCase())).length);
   const maxCount = Math.max(...counts, 1);
-  // Dynamic height: 52px per bar, min 200px
   const chartH = Math.max(200, solarias.length * 52 + 40);
   const wrap = document.getElementById('chart-sol-wrap');
   if(wrap) wrap.style.height = chartH + 'px';
@@ -2597,14 +2785,259 @@ function renderSolarias(){
       animation:{duration:600,easing:'easeOutQuart'}
     }
   });
+
+  renderPeriodAnalysis();
+}
+
+// ==================== DÖNEM ANALİZİ ====================
+function renderPeriodAnalysis(){
+  const wrap = document.getElementById('sol-period-analysis');
+  if(!wrap) return;
+  const events = load('events').filter(e=>e.status==='done');
+  const now = new Date();
+  const thisMonth = now.getMonth(); const thisYear = now.getFullYear();
+  const lastMonth = thisMonth===0?11:thisMonth-1;
+  const lastYear = thisMonth===0?thisYear-1:thisYear;
+
+  const inMonth=(e,m,y)=>{ const d=new Date(e.date); return d.getMonth()===m && d.getFullYear()===y; };
+  const thisEv = events.filter(e=>inMonth(e,thisMonth,thisYear));
+  const lastEv = events.filter(e=>inMonth(e,lastMonth,lastYear));
+
+  const thisCount = thisEv.length;
+  const lastCount = lastEv.length;
+  const thisPart = thisEv.reduce((s,e)=>s+(e.participants||[]).length,0);
+  const lastPart = lastEv.reduce((s,e)=>s+(e.participants||[]).length,0);
+  const thisAvgPart = thisCount ? (thisPart/thisCount).toFixed(1) : 0;
+  const lastAvgPart = lastCount ? (lastPart/lastCount).toFixed(1) : 0;
+  const thisScore = thisEv.filter(e=>e.score).reduce((s,e)=>s+parseFloat(e.score),0);
+  const thisScoreCount = thisEv.filter(e=>e.score).length;
+  const lastScore = lastEv.filter(e=>e.score).reduce((s,e)=>s+parseFloat(e.score),0);
+  const lastScoreCount = lastEv.filter(e=>e.score).length;
+  const thisAvgScore = thisScoreCount ? (thisScore/thisScoreCount).toFixed(1) : null;
+  const lastAvgScore = lastScoreCount ? (lastScore/lastScoreCount).toFixed(1) : null;
+
+  function pctArrow(now,prev){
+    if(!prev && !now) return `<span class="period-arrow-same">— veri yok</span>`;
+    if(!prev) return `<span class="period-arrow-up">↑ Yeni başlangıç</span>`;
+    if(!now) return `<span class="period-arrow-down">↓ %100 düşüş</span>`;
+    const pct = ((now-prev)/prev*100).toFixed(0);
+    if(pct>0) return `<span class="period-arrow-up">↑ %${pct} artış</span>`;
+    if(pct<0) return `<span class="period-arrow-down">↓ %${Math.abs(pct)} düşüş</span>`;
+    return `<span class="period-arrow-same">→ Değişmedi</span>`;
+  }
+
+  const months=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  wrap.innerHTML=`
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">
+      <strong style="color:var(--text2);">${months[thisMonth]} ${thisYear}</strong> ile <strong style="color:var(--text2);">${months[lastMonth]} ${lastYear}</strong> karşılaştırması
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;">
+      <div class="period-card">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">🎮 Etkinlik Sayısı</div>
+        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent);">${thisCount}</div>
+        <div style="font-size:11px;color:var(--text3);">Geçen ay: ${lastCount}</div>
+        ${pctArrow(thisCount,lastCount)}
+      </div>
+      <div class="period-card">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">👥 Toplam Katılım</div>
+        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent);">${thisPart}</div>
+        <div style="font-size:11px;color:var(--text3);">Geçen ay: ${lastPart}</div>
+        ${pctArrow(thisPart,lastPart)}
+      </div>
+      <div class="period-card">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">📊 Ort. Katılım</div>
+        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent);">${thisAvgPart}</div>
+        <div style="font-size:11px;color:var(--text3);">Geçen ay: ${lastAvgPart}</div>
+        ${pctArrow(parseFloat(thisAvgPart),parseFloat(lastAvgPart))}
+      </div>
+      <div class="period-card">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">⭐ Ort. Puan</div>
+        <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent);">${thisAvgScore||'—'}</div>
+        <div style="font-size:11px;color:var(--text3);">Geçen ay: ${lastAvgScore||'—'}</div>
+        ${pctArrow(thisAvgScore?parseFloat(thisAvgScore):null,lastAvgScore?parseFloat(lastAvgScore):null)}
+      </div>
+    </div>
+  `;
 }
 
 function openAddSolarias(){document.getElementById('sol-name-in').value='';openModal('modal-add-sol');}
+
+// ==================== GALERİ & ALINTI ====================
+function getEvGallery(evKey){
+  return (window._fbCache && window._fbCache._evGallery && window._fbCache._evGallery[evKey]) || [];
+}
+function getEvQuotes(evKey){
+  return (window._fbCache && window._fbCache._evQuotes && window._fbCache._evQuotes[evKey]) || [];
+}
+async function saveEvGallery(evKey, arr){
+  if(!window._fbCache._evGallery) window._fbCache._evGallery={};
+  window._fbCache._evGallery[evKey]=arr;
+  if(window._fbDb && window._fbSet && window._fbRef)
+    await window._fbSet(window._fbRef(window._fbDb,'ls_ev_gallery/'+evKey), arr).catch(()=>{});
+}
+async function saveEvQuotesData(evKey, arr){
+  if(!window._fbCache._evQuotes) window._fbCache._evQuotes={};
+  window._fbCache._evQuotes[evKey]=arr;
+  if(window._fbDb && window._fbSet && window._fbRef)
+    await window._fbSet(window._fbRef(window._fbDb,'ls_ev_quotes/'+evKey), arr).catch(()=>{});
+}
+
+function addEvImages(evKey, input){
+  if(!guardWrite()) return;
+  const files = Array.from(input.files);
+  if(!files.length) return;
+  const gallery = [...getEvGallery(evKey)];
+  let loaded = 0;
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = async e=>{
+      gallery.push(e.target.result);
+      loaded++;
+      if(loaded===files.length){
+        await saveEvGallery(evKey, gallery);
+        const grid = document.getElementById('ev-gallery-'+evKey);
+        if(grid) reRenderGalleryGrid(evKey, grid);
+        notify('🖼','Resimler Eklendi',`${files.length} resim yüklendi.`);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function reRenderGalleryGrid(evKey, grid){
+  const gallery = getEvGallery(evKey);
+  const isViewer = currentRole==='viewer';
+  grid.innerHTML = gallery.map((src,gi)=>`
+    <div style="position:relative;">
+      <img class="ev-gallery-img" src="${src}" onclick="openGalleryLightbox('${evKey}',${gi})">
+      ${!isViewer?`<button onclick="deleteEvImage('${evKey}',${gi})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:4px;padding:1px 5px;font-size:10px;cursor:pointer;">✕</button>`:''}
+    </div>`).join('') + (gallery.length===0?'<div style="font-size:11px;color:var(--text3);grid-column:1/-1;padding:8px 0;">Resim eklemek için yukarıdaki butonu kullan.</div>':'');
+}
+
+async function deleteEvImage(evKey, idx){
+  if(!guardWrite()) return;
+  // Cache'den taze oku, splice, kaydet, grid'i güncelle
+  const gallery = JSON.parse(JSON.stringify(getEvGallery(evKey)));
+  gallery.splice(idx,1);
+  // Önce cache'i güncelle
+  if(!window._fbCache._evGallery) window._fbCache._evGallery = {};
+  window._fbCache._evGallery[evKey] = gallery;
+  // Sonra firebase'e kaydet
+  if(window._fbDb && window._fbSet && window._fbRef)
+    await window._fbSet(window._fbRef(window._fbDb,'ls_ev_gallery/'+evKey), gallery).catch(()=>{});
+  const grid = document.getElementById('ev-gallery-'+evKey);
+  if(grid) reRenderGalleryGrid(evKey, grid);
+}
+
+function openGalleryLightbox(evKey, startIdx){
+  const gallery = getEvGallery(evKey);
+  if(!gallery.length) return;
+  // Global state for lightbox navigation
+  window._lbEvKey = evKey;
+  window._lbCur = startIdx;
+  window._lbEl = null;
+
+  window._lbRender = function(){
+    const g = getEvGallery(window._lbEvKey);
+    const cur = window._lbCur;
+    const img = document.getElementById('lb-img');
+    const counter = document.getElementById('lb-counter');
+    const prev = document.getElementById('lb-prev');
+    const next = document.getElementById('lb-next');
+    if(img) img.src = g[cur];
+    if(counter) counter.textContent = (cur+1) + ' / ' + g.length;
+    if(prev){ prev.disabled = cur<=0; prev.style.opacity = cur<=0?'.3':'1'; }
+    if(next){ next.disabled = cur>=g.length-1; next.style.opacity = cur>=g.length-1?'.3':'1'; }
+  };
+
+  window._lbClose = function(){
+    const el = document.getElementById('lb-overlay');
+    if(el) el.remove();
+  };
+  window._lbPrev = function(e){ e.stopPropagation(); if(window._lbCur>0){window._lbCur--;window._lbRender();} };
+  window._lbNext = function(e){ e.stopPropagation(); if(window._lbCur<getEvGallery(window._lbEvKey).length-1){window._lbCur++;window._lbRender();} };
+
+  const lb = document.createElement('div');
+  lb.id = 'lb-overlay';
+  lb.className = 'ev-gallery-lightbox';
+  lb.onclick = window._lbClose;
+  lb.innerHTML = `
+    <div onclick="event.stopPropagation()" style="position:relative;display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <img id="lb-img" src="${gallery[startIdx]}" style="max-width:90vw;max-height:80vh;border-radius:var(--r);box-shadow:0 8px 40px rgba(0,0,0,.6);">
+      <div style="display:flex;gap:12px;align-items:center;">
+        <button id="lb-prev" onclick="window._lbPrev(event)" style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);padding:6px 18px;cursor:pointer;font-size:20px;">‹</button>
+        <span id="lb-counter" style="font-size:12px;color:var(--text3);">${startIdx+1} / ${gallery.length}</span>
+        <button id="lb-next" onclick="window._lbNext(event)" style="background:var(--card2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);padding:6px 18px;cursor:pointer;font-size:20px;">›</button>
+      </div>
+      <button onclick="window._lbClose()" style="position:absolute;top:-36px;right:0;background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;">✕</button>
+    </div>`;
+  document.body.appendChild(lb);
+  window._lbRender();
+
+  // Klavye navigasyonu
+  window._lbKeyHandler = function(e){
+    if(e.key==='ArrowLeft') window._lbPrev(e);
+    else if(e.key==='ArrowRight') window._lbNext(e);
+    else if(e.key==='Escape') window._lbClose();
+  };
+  document.addEventListener('keydown', window._lbKeyHandler);
+  // Kapatılınca event'i temizle
+  const observer = new MutationObserver(()=>{
+    if(!document.getElementById('lb-overlay')){
+      document.removeEventListener('keydown', window._lbKeyHandler);
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.body, {childList:true});
+}
+
+function showAddQuoteForm(evKey){
+  const frm = document.getElementById('add-quote-form-'+evKey);
+  if(frm){ frm.style.display=''; const inp=document.getElementById('quote-text-'+evKey); if(inp) inp.focus(); }
+}
+
+async function saveEvQuote(evKey){
+  if(!guardWrite()) return;
+  const textEl = document.getElementById('quote-text-'+evKey);
+  const authEl = document.getElementById('quote-author-'+evKey);
+  const text = textEl?textEl.value.trim():'';
+  if(!text){ showNotif('⚠','Boş','Alıntı metni boş olamaz.',2000); return; }
+  const author = authEl?authEl.value.trim():'';
+  const quotes = [...getEvQuotes(evKey), {text, author}];
+  await saveEvQuotesData(evKey, quotes);
+  if(textEl) textEl.value='';
+  if(authEl) authEl.value='';
+  const frm = document.getElementById('add-quote-form-'+evKey);
+  if(frm) frm.style.display='none';
+  const wrap = document.getElementById('ev-quotes-'+evKey);
+  if(wrap) reRenderQuotes(evKey, wrap);
+  notify('💬','Alıntı Eklendi','Unutulmaz an kaydedildi!');
+}
+
+function reRenderQuotes(evKey, wrap){
+  const quotes = getEvQuotes(evKey);
+  const isViewer = currentRole==='viewer';
+  wrap.innerHTML = quotes.map((q,qi)=>`<div class="quote-item">
+    <div class="quote-text">"${escHtml(q.text)}"</div>
+    ${q.author?`<div class="quote-author">— ${escHtml(q.author)}</div>`:''}
+    ${!isViewer?`<button class="quote-del" onclick="deleteEvQuote('${evKey}',${qi})">✕</button>`:''}
+  </div>`).join('') + (quotes.length===0?'<div style="font-size:11px;color:var(--text3);padding:8px 0;">Henüz alıntı yok.</div>':'');
+}
+
+async function deleteEvQuote(evKey, idx){
+  if(!guardWrite()) return;
+  const quotes = [...getEvQuotes(evKey)];
+  quotes.splice(idx,1);
+  await saveEvQuotesData(evKey, quotes);
+  const wrap = document.getElementById('ev-quotes-'+evKey);
+  if(wrap) reRenderQuotes(evKey, wrap);
+}
 function saveSolarias(){
   const name=document.getElementById('sol-name-in').value.trim();
   if(!name)return alert('İsim gerekli!');
+  const discordId=document.getElementById('sol-discordid-in').value.trim();
   const solarias=load('solarias');
-  solarias.push({name,role:document.getElementById('sol-role-in').value});
+  solarias.push({name,role:document.getElementById('sol-role-in').value, ...(discordId?{discordId}:{})});
   save('solarias',solarias);closeModal('modal-add-sol');renderSolarias();
   notify('★','Solarias eklendi',`${name} ekibe katıldı.`,'#c4b5fd');
 }
@@ -2614,6 +3047,7 @@ function openEditSolarias(i){
   document.getElementById('esol-idx').value=i;
   document.getElementById('esol-name').value=s.name;
   document.getElementById('esol-role').value=s.role;
+  document.getElementById('esol-discordid').value=s.discordId||'';
   openModal('modal-edit-sol');
 }
 
@@ -2622,6 +3056,8 @@ function saveEditSolarias(){
   const solarias=load('solarias');
   solarias[i].name=document.getElementById('esol-name').value.trim();
   solarias[i].role=document.getElementById('esol-role').value;
+  const did=document.getElementById('esol-discordid').value.trim();
+  if(did) solarias[i].discordId=did; else delete solarias[i].discordId;
   save('solarias',solarias);closeModal('modal-edit-sol');renderSolarias();
   notify('✅','Solarias güncellendi',solarias[i].name+' güncellendi.');
 }
@@ -2636,6 +3072,77 @@ function deleteSolarias(idx){
 }
 
 // ==================== ANNOUNCEMENTS ====================
+// ---- TEPKILER ----
+const ANN_REACTIONS = [
+  {key:'like', emoji:'👍'},
+  {key:'eye',  emoji:'👀'},
+  {key:'cowboy', emoji:'🤠'},
+  {key:'fire', emoji:'🔥'},
+];
+
+function getAnnReactions(annId){
+  // from firebase cache
+  const all = (window._fbCache && window._fbCache._annReactions) || {};
+  return all[annId] || {};
+}
+
+function getUserReactionId(){
+  // Persistent per-device random ID
+  try{
+    let uid = localStorage.getItem('ls_react_uid');
+    if(!uid){ uid = 'u_'+Math.random().toString(36).slice(2,10)+'_'+Date.now().toString(36); localStorage.setItem('ls_react_uid',uid); }
+    return uid;
+  }catch(e){ return 'anonymous'; }
+}
+
+async function toggleAnnReaction(annId, reactionKey){
+  const uid = getUserReactionId();
+  const all = JSON.parse(JSON.stringify((window._fbCache && window._fbCache._annReactions) || {}));
+  if(!all[annId]) all[annId] = {};
+
+  // Find current user reaction
+  const currentKey = Object.keys(all[annId]).find(k => {
+    const users = all[annId][k] || {};
+    return Object.keys(users).includes(uid);
+  });
+
+  if(currentKey === reactionKey){
+    // Remove
+    delete all[annId][reactionKey][uid];
+    if(Object.keys(all[annId][reactionKey]).length===0) delete all[annId][reactionKey];
+  } else {
+    // Remove old
+    if(currentKey){ delete all[annId][currentKey][uid]; if(Object.keys(all[annId][currentKey]).length===0) delete all[annId][currentKey]; }
+    // Add new
+    if(!all[annId][reactionKey]) all[annId][reactionKey]={};
+    all[annId][reactionKey][uid] = 1;
+  }
+
+  if(window._fbCache) window._fbCache._annReactions = all;
+  if(window._fbDb && window._fbSet && window._fbRef)
+    await window._fbSet(window._fbRef(window._fbDb,'ls_ann_reactions'), all).catch(()=>{});
+
+  // Re-render only the reactions row for this announcement
+  const reactWrap = document.getElementById('ann-react-'+annId);
+  if(reactWrap) reactWrap.innerHTML = buildReactionsHTML(annId);
+}
+
+function buildReactionsHTML(annId){
+  const uid = getUserReactionId();
+  const rData = getAnnReactions(annId);
+  const userReact = Object.keys(rData).find(k=>rData[k] && Object.keys(rData[k]).includes(uid));
+  return ANN_REACTIONS.map(r=>{
+    const count = rData[r.key] ? Object.keys(rData[r.key]).length : 0;
+    const selected = userReact===r.key;
+    // Sayı: 0 ise gizli, >0 ise göster; seçilince animasyonla çıkar
+    const countStyle = count > 0
+      ? 'display:inline;animation:reactCountPop .2s ease;'
+      : 'display:none;';
+    return `<button class="ann-react-btn${selected?' selected':''}" onclick="toggleAnnReaction('${annId}','${r.key}')" title="${r.emoji}">
+      ${r.emoji}<span class="ann-react-count" style="${countStyle}">${count||''}</span>
+    </button>`;
+  }).join('');
+}
 function loadAnnouncements(){
   const val = window._fbCache && window._fbCache.announcements;
   if(Array.isArray(val)) return val;
@@ -2676,7 +3183,9 @@ function renderAnnouncementsOverview(){
         </button>
       </div>
       <div id="ann-ov-body" style="overflow:hidden;transition:max-height .3s ease,opacity .3s ease;${wasCollapsed ? 'max-height:0;opacity:0;' : 'max-height:2000px;opacity:1;'}">
-        ${sorted.map(a=>`
+      ${sorted.map(a=>{
+          const annId = 'ann_'+(a.createdAt||0);
+          return`
           <div class="ann-card ${a.pinned?'pinned':''}">
             <div class="ann-card-accent"></div>
             <div class="ann-card-title">${escHtml(a.title)}</div>
@@ -2687,8 +3196,9 @@ function renderAnnouncementsOverview(){
               <span>${fmtAnnDate(a.createdAt)}</span>
               ${a.pinned?'<span class="ann-card-meta-sep">·</span><span style="color:var(--p400);">📌 Sabitlendi</span>':''}
             </div>
+            <div class="ann-reactions" id="ann-react-${annId}">${buildReactionsHTML(annId)}</div>
           </div>
-        `).join('')}
+        `}).join('')}
       </div>
     </div>
   `;
@@ -3315,20 +3825,48 @@ function _participantDisplay(ids){
     return m.nick || m.id;
   }).filter(Boolean);
 }
+// Yönetici alanını Discord mention'a çevir (üye veya solarias tablosuna bak)
+function _managerMention(managersStr){
+  if(!managersStr) return '—';
+  const allMembers = load('members');
+  const solarias = load('solarias');
+  const names = managersStr.split(',').map(s=>s.trim()).filter(Boolean);
+  return names.map(name=>{
+    // Önce üyeler tablosunda ara
+    const m = allMembers.find(x=>x.nick===name||x.user===name);
+    if(m && /^\d{15,20}$/.test(m.id)) return `<@${m.id}>`;
+    if(m) return `**${m.nick}**`;
+    // Sonra solarias tablosunda ara (discordId var mı?)
+    const s = solarias.find(x=>x.name===name);
+    if(s && s.discordId && /^\d{15,20}$/.test(s.discordId)) return `<@${s.discordId}>`;
+    return `**${name}**`;
+  }).join(', ');
+}
+// Etkinlik tarih+saatini Discord <t:UNIX:F> formatına çevir (Türkiye UTC+3)
+function _evDiscordTs(date, time){
+  if(!date) return '—';
+  const str = date + 'T' + (time||'21:00') + ':00+03:00';
+  const unix = Math.floor(new Date(str).getTime() / 1000);
+  return '<t:' + unix + ':F>';
+}
+// Sadece tarih için
+function _evDiscordTsDate(date){
+  if(!date) return '—';
+  const unix = Math.floor(new Date(date + 'T00:00:00+03:00').getTime() / 1000);
+  return '<t:' + unix + ':D>';
+}
 
 // ── Etkinlik planlandı ───────────────────────────────────────────────────────
 function webhookPlanEvent(ev){
   if(!webhookOn('onPlan')) return;
-  const dateStr = _fmtDate(ev.date);
   sendWebhook({ embeds:[{
     title: '📅  Yeni Etkinlik Planlandı',
     color: 0x7C3AED,
     description: `### ${ev.name}\nTakvime eklendi — katılmak için hazır ol! 🎯`,
     fields:[
-      {name:'📆 Tarih',    value: dateStr,          inline:true},
-      {name:'🕘 Saat',     value: ev.time||'21:00',  inline:true},
-      {name:'🎭 Tür',      value: ev.type||'Oyun',   inline:true},
-      ...(ev.managers?[{name:'🎤 Yönetici', value: ev.managers, inline:false}]:[]),
+      {name:'📅 Tarih & Saat', value: _evDiscordTs(ev.date, ev.time), inline:true},
+      {name:'🎭 Tür',          value: ev.type||'Oyun',                inline:true},
+      ...(ev.managers?[{name:'🎤 Yönetici', value: _managerMention(ev.managers), inline:false}]:[]),
     ],
     footer:{ text:'Lumina Solarias · Etkinlik Sistemi' },
     timestamp: new Date().toISOString()
@@ -3350,11 +3888,7 @@ function webhookCompleteEvent(ev){
   }).filter(Boolean);
 
   // Yöneticiyi de mention et (managers alanı üye nick'i ise ID'ye çevir)
-  let managerValue = ev.managers||'—';
-  if(ev.managers){
-    const mgr = allMembers.find(m=>m.nick===ev.managers||m.user===ev.managers);
-    if(mgr && /^\d{15,20}$/.test(mgr.id)) managerValue = `<@${mgr.id}>`;
-  }
+  let managerValue = _managerMention(ev.managers);
 
   const embeds = [{
     title: '✅  Etkinlik Tamamlandı!',
@@ -3384,12 +3918,11 @@ function webhookEditEvent(ev, oldDate){
     color: 0xFBBF24,
     description: `**${ev.name}** etkinliğinde değişiklik yapıldı.`,
     fields:[
-      dateChanged
-        ? {name:'📆 Tarih', value: `~~${_fmtDate(oldDate)}~~ → **${_fmtDate(ev.date)}**`, inline:true}
-        : {name:'📆 Tarih', value: _fmtDate(ev.date), inline:true},
-      {name:'🕘 Saat',    value: ev.time||'21:00',   inline:true},
+      {name:'📅 Tarih & Saat', value: dateChanged
+        ? `~~${_fmtDate(oldDate)}~~ → ${_evDiscordTs(ev.date, ev.time)}`
+        : _evDiscordTs(ev.date, ev.time), inline:true},
       {name:'🎭 Tür',     value: ev.type||'—',        inline:true},
-      ...(ev.managers?[{name:'🎤 Yönetici', value: ev.managers, inline:false}]:[]),
+      ...(ev.managers?[{name:'🎤 Yönetici', value: _managerMention(ev.managers), inline:false}]:[]),
     ],
     footer:{ text:'Lumina Solarias · Etkinlik Sistemi' },
     timestamp: new Date().toISOString()
@@ -3467,9 +4000,8 @@ function checkUpcomingReminder(){
       color: 0xC4B5FD,
       description: `**${ev.name}** etkinliğine 24 saatten az kaldı! Hazırlan 🎯`,
       fields:[
-        {name:'📆 Tarih', value: _fmtDate(ev.date),  inline:true},
-        {name:'🕘 Saat',  value: ev.time||'21:00',    inline:true},
-        ...(ev.managers?[{name:'🎤 Yönetici', value: ev.managers, inline:true}]:[]),
+        {name:'📅 Tarih & Saat', value: _evDiscordTs(ev.date, ev.time), inline:true},
+        ...(ev.managers?[{name:'🎤 Yönetici', value: _managerMention(ev.managers), inline:true}]:[]),
       ],
       footer:{ text:'Lumina Solarias · Hatırlatma Sistemi' },
       timestamp: new Date().toISOString()
@@ -3636,7 +4168,7 @@ function webhookHighScore(ev){
     fields:[
       {name:'⭐ Değerlendirme', value: _scoreBar(ev.score), inline:false},
       {name:'👥 Katılım',       value: (ev.participants||[]).length+' kişi', inline:true},
-      {name:'🎤 Yönetici',      value: ev.managers||'—',                     inline:true},
+      {name:'🎤 Yönetici',      value: _managerMention(ev.managers),         inline:true},
     ],
     footer:{ text:'Lumina Solarias · '+_fmtDate(ev.date) },
     timestamp:new Date().toISOString()
@@ -3664,7 +4196,7 @@ function webhookLowAttend(ev){
     description:`**${ev.name}** etkinliğine beklenenin altında katılım oldu.`,
     fields:[
       {name:'👥 Katılım', value: (ev.participants||[]).length+' kişi', inline:true},
-      {name:'🎤 Yönetici',value: ev.managers||'—',                     inline:true},
+      {name:'🎤 Yönetici',value: _managerMention(ev.managers),         inline:true},
     ],
     footer:{ text:'Lumina Solarias · '+_fmtDate(ev.date) },
     timestamp:new Date().toISOString()
@@ -3679,8 +4211,7 @@ function webhookRecord(ev, oldRecord){
     if(m && /^\d{15,20}$/.test(m.id)) return `<@${m.id}>`;
     return m ? `\`${m.nick}\`` : null;
   }).filter(Boolean);
-  let managerValue = ev.managers||'—';
-  if(ev.managers){ const mgr=allMembers.find(m=>m.nick===ev.managers||m.user===ev.managers); if(mgr&&/^\d{15,20}$/.test(mgr.id)) managerValue=`<@${mgr.id}>`; }
+  let managerValue = _managerMention(ev.managers);
   sendWebhook({embeds:[{
     title:'🎉  Yeni Katılım Rekoru!',
     color:0x34D399,
@@ -3747,7 +4278,7 @@ function checkNoEvent(){
       title:'⚠️  Etkinliksiz Geçen Süre',
       color:0xFBBF24,
       description:`**${diff} gündür** etkinlik yapılmadı! Bir sonrakini ne zaman planlayalım? 🗓️`,
-      fields:[{name:'📅 Son Etkinlik', value:`**${last.name}** — ${_fmtDate(last.date)}`, inline:false}],
+      fields:[{name:'📅 Son Etkinlik', value:`**${last.name}** — ${_evDiscordTsDate(last.date)}`, inline:false}],
       footer:{ text:'Lumina Solarias · Etkinlik Takibi' },
       timestamp:new Date().toISOString()
     }]}, `⚠️ ${diff} gün etkinliksiz`);
@@ -3816,10 +4347,18 @@ window._bootApp = async function(){
   if(window._fbGet && window._fbRef && window._fbDb){
     Promise.all([
       window._fbGet(window._fbRef(window._fbDb,'ls_webhook_url')),
-      window._fbGet(window._fbRef(window._fbDb,'ls_webhook_toggles'))
-    ]).then(([urlSnap,togSnap])=>{
+      window._fbGet(window._fbRef(window._fbDb,'ls_webhook_toggles')),
+      window._fbGet(window._fbRef(window._fbDb,'ls_ann_reactions')),
+      window._fbGet(window._fbRef(window._fbDb,'ls_sol_notes')),
+      window._fbGet(window._fbRef(window._fbDb,'ls_ev_gallery')),
+      window._fbGet(window._fbRef(window._fbDb,'ls_ev_quotes')),
+    ]).then(([urlSnap,togSnap,reactSnap,solNotesSnap,gallerySnap,quotesSnap])=>{
       if(urlSnap.exists() && window._fbCache) window._fbCache._webhookUrl = urlSnap.val();
       if(togSnap.exists() && window._fbCache) window._fbCache._webhookToggles = togSnap.val();
+      if(reactSnap.exists() && window._fbCache) window._fbCache._annReactions = reactSnap.val();
+      if(solNotesSnap.exists()){ try{ localStorage.setItem('ls_sol_notes', JSON.stringify(solNotesSnap.val())); }catch(e){} }
+      if(gallerySnap.exists() && window._fbCache) window._fbCache._evGallery = gallerySnap.val();
+      if(quotesSnap.exists() && window._fbCache) window._fbCache._evQuotes = quotesSnap.val();
       if(currentRole==='admin'||currentRole==='solarias'){
         checkUpcomingReminder();
         checkWeeklySummary();
