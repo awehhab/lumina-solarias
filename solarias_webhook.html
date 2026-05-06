@@ -34,8 +34,8 @@
   window._fbReady = false;
 
   // Load all data from Firebase into memory cache, then boot the app
-  const KEYS = {members:'ls3_members', events:'ls3_events', games:'ls3_games', issues:'ls3_issues', solarias:'ls3_solarias'};
-  window._fbCache = {members:null, events:null, games:null, issues:null, solarias:null};
+  const KEYS = {members:'ls3_members', events:'ls3_events', games:'ls3_games', issues:'ls3_issues', solarias:'ls3_solarias', announcements:'ls3_announcements'};
+  window._fbCache = {members:null, events:null, games:null, issues:null, solarias:null, announcements:null};
 
   async function loadAllFromFirebase() {
     // GÜVENLIK: Önce sadece şifreleri yükle, auth onaylanmadan uygulama başlamaz
@@ -397,6 +397,252 @@ body.viewer-mode .viewer-hide { display: none !important; }
 body.viewer-mode #m-archive-toggle { display: none !important; }
 /* Viewer: üye sütunu - sadece katılım sayısı görünsün, diğer action butonlar gizle */
 body.viewer-mode .member-action-col { display: none !important; }
+
+/* ===== ANNOUNCEMENTS ===== */
+/* Genel Bakış duyuru kartları */
+.ann-ov-wrap {
+  margin-bottom: 14px;
+}
+.ann-ov-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ann-ov-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text3);
+}
+.ann-ov-label::before {
+  content: '📢 ';
+}
+.ann-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 12px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: all .15s;
+  margin-left: 6px;
+  flex-shrink: 0;
+}
+.ann-toggle-btn:hover {
+  background: var(--card2);
+  color: var(--text);
+  border-color: var(--p400);
+}
+.ann-card {
+  position: relative;
+  border-radius: var(--rs);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border2);
+  overflow: hidden;
+  animation: annFadeIn .4s ease;
+}
+@keyframes annFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ann-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(var(--p-r),var(--p-g),var(--p-b),0.10) 0%, transparent 60%);
+  pointer-events: none;
+}
+.ann-card.pinned {
+  border-color: var(--p400);
+  background: linear-gradient(135deg, rgba(var(--p-r),var(--p-g),var(--p-b),0.10) 0%, var(--card) 100%);
+  box-shadow: 0 0 0 1px rgba(var(--p-r),var(--p-g),var(--p-b),0.15), 0 8px 32px rgba(0,0,0,0.3);
+}
+.ann-card.pinned::after {
+  content: '📌';
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-size: 16px;
+  opacity: .7;
+}
+.ann-card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+  padding-right: 30px;
+}
+.ann-card-body {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.ann-card-body ul, .ann-card-body ol {
+  padding-left: 18px;
+  margin: 6px 0;
+}
+.ann-card-body li {
+  margin-bottom: 3px;
+}
+.ann-card-meta {
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ann-card-meta-sep { opacity: .4; }
+/* Shimmer akzant çizgisi */
+.ann-card-accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--p400), var(--p600));
+  border-radius: 4px 0 0 4px;
+}
+
+/* Yönetim listesinde duyuru satırı */
+.ann-mgmt-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--rs);
+  margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.ann-mgmt-item:hover { border-color: var(--border2); }
+.ann-mgmt-item.pinned { border-color: rgba(var(--p-r),var(--p-g),var(--p-b),0.3); }
+.ann-mgmt-info { flex: 1; min-width: 0; }
+.ann-mgmt-title { font-weight: 600; font-size: 13.5px; margin-bottom: 3px; }
+.ann-mgmt-excerpt { font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ann-mgmt-date { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+/* Editör toolbar */
+.ann-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-bottom: none;
+  border-radius: var(--rs) var(--rs) 0 0;
+}
+.ann-tb-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.ann-tb-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border2);
+  margin: 0 4px;
+}
+.ann-tb-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  padding: 4px 8px;
+  transition: all .12s;
+  line-height: 1.3;
+}
+.ann-tb-btn:hover {
+  background: var(--card2);
+  border-color: var(--border2);
+  color: var(--text);
+}
+.ann-tb-select {
+  background: var(--card2);
+  border: 1px solid var(--border2);
+  border-radius: 5px;
+  color: var(--text2);
+  font-size: 11.5px;
+  font-family: 'DM Sans', sans-serif;
+  padding: 4px 6px;
+  cursor: pointer;
+  outline: none;
+}
+.ann-color-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ann-color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform .12s, border-color .12s;
+  padding: 0;
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ann-color-dot:hover {
+  transform: scale(1.25);
+  border-color: var(--text2);
+}
+/* Editör yazı alanı */
+.ann-editor-body {
+  min-height: 160px;
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 0 0 var(--rs) var(--rs);
+  color: var(--text);
+  padding: 14px 16px;
+  font-size: 13.5px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  line-height: 1.7;
+  transition: border-color .15s;
+}
+.ann-editor-body:focus { border-color: var(--p400); }
+.ann-editor-body:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text3);
+  pointer-events: none;
+}
+.ann-editor-body ul, .ann-editor-body ol { padding-left: 18px; }
+/* Önizleme kutusu mini */
+.ann-preview-card-mini {
+  background: var(--card2);
+  border: 1px dashed var(--border2);
+  border-radius: var(--rs);
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text2);
+  min-height: 48px;
+}
+@media(max-width:768px){
+  .ann-toolbar { gap: 3px; }
+  .ann-tb-btn { padding: 4px 6px; font-size: 11px; }
+}
 </style>
 </head>
 <body>
@@ -525,6 +771,10 @@ body.viewer-mode .member-action-col { display: none !important; }
 <!-- OVERVIEW -->
 <div class="tab active" id="tab-overview">
   <div class="ph"><div><div class="pt">Genel Bakış</div><div class="ps">Lumina Solarias topluluk özeti</div></div></div>
+
+  <!-- DUYURULAR ALANI -->
+  <div id="ov-announcements-wrap"></div>
+
   <div class="sgrid">
     <div class="sc"><div class="sl">Toplam Üye</div><div class="sv" id="ov-total">0</div></div>
     <div class="sc"><div class="sl">Aktif Üye</div><div class="sv" id="ov-active">0</div></div>
@@ -719,9 +969,103 @@ body.viewer-mode .member-action-col { display: none !important; }
     </div>
   </div>
 
+  <!-- Announcements Management (Admin only) -->
+  <div class="sec" style="max-width:820px;margin-top:0;" id="ann-settings-sec">
+    <div class="sec-h">
+      <div class="sec-t">📢 Duyuru Yönetimi</div>
+      <button class="btn btn-p btn-sm" onclick="openAddAnnouncement()" id="ann-add-btn">＋ Yeni Duyuru</button>
+    </div>
+
+    <!-- Editör (varsayılan gizli) -->
+    <div id="ann-editor-sec" style="display:none;margin-top:4px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:12.5px;font-weight:600;color:var(--text2);" id="ann-editor-title">📝 Yeni Duyuru</div>
+        <button class="btn btn-g btn-sm" onclick="closeAnnEditor()">✕ Kapat</button>
+      </div>
+
+      <div class="fgrp" style="margin-bottom:12px;">
+        <label>Başlık *</label>
+        <input id="ann-title-in" placeholder="Duyuru başlığı..." maxlength="100">
+      </div>
+
+      <div class="ann-toolbar" id="ann-toolbar">
+        <div class="ann-tb-group">
+          <button class="ann-tb-btn" onclick="annFormat('bold')" title="Kalın"><b>K</b></button>
+          <button class="ann-tb-btn" onclick="annFormat('italic')" title="İtalik"><i>İ</i></button>
+          <button class="ann-tb-btn" onclick="annFormat('underline')" title="Altı Çizili"><u>A</u></button>
+          <button class="ann-tb-btn" onclick="annFormat('strikeThrough')" title="Üstü Çizili"><s>S</s></button>
+        </div>
+        <div class="ann-tb-sep"></div>
+        <div class="ann-tb-group">
+          <select class="ann-tb-select" onchange="annFontSize(this.value)">
+            <option value="">Boyut</option>
+            <option value="1">Küçük</option>
+            <option value="3">Normal</option>
+            <option value="5">Büyük</option>
+            <option value="7">Çok Büyük</option>
+          </select>
+        </div>
+        <div class="ann-tb-sep"></div>
+        <div class="ann-tb-group">
+          <button class="ann-tb-btn" onclick="annFormat('insertUnorderedList')">• Liste</button>
+          <button class="ann-tb-btn" onclick="annFormat('insertOrderedList')">1. Liste</button>
+        </div>
+        <div class="ann-tb-sep"></div>
+        <div class="ann-tb-group">
+          <button class="ann-tb-btn" onclick="annFormat('justifyLeft')" title="Sola">⬛⬜⬜</button>
+          <button class="ann-tb-btn" onclick="annFormat('justifyCenter')" title="Ortala">⬜⬛⬜</button>
+          <button class="ann-tb-btn" onclick="annFormat('justifyRight')" title="Sağa">⬜⬜⬛</button>
+        </div>
+        <div class="ann-tb-sep"></div>
+        <div class="ann-tb-group ann-color-group">
+          <span style="font-size:11px;color:var(--text3);align-self:center;">Renk:</span>
+          <button class="ann-color-dot" style="background:#f0ecff;" onclick="annColor('#f0ecff')" title="Beyaz"></button>
+          <button class="ann-color-dot" style="background:#c4b5fd;" onclick="annColor('#c4b5fd')" title="Mor"></button>
+          <button class="ann-color-dot" style="background:#34d399;" onclick="annColor('#34d399')" title="Yeşil"></button>
+          <button class="ann-color-dot" style="background:#fbbf24;" onclick="annColor('#fbbf24')" title="Sarı"></button>
+          <button class="ann-color-dot" style="background:#f87171;" onclick="annColor('#f87171')" title="Kırmızı"></button>
+          <button class="ann-color-dot" style="background:#60a5fa;" onclick="annColor('#60a5fa')" title="Mavi"></button>
+          <button class="ann-color-dot" style="background:#fb923c;" onclick="annColor('#fb923c')" title="Turuncu"></button>
+          <button class="ann-color-dot" onclick="annColor('inherit')" title="Varsayılan" style="background:var(--card2);border:1.5px dashed var(--border2);">✕</button>
+        </div>
+        <div class="ann-tb-sep"></div>
+        <div class="ann-tb-group">
+          <button class="ann-tb-btn" onclick="annFormat('removeFormat')" style="color:var(--red);">✕ Temizle</button>
+        </div>
+      </div>
+
+      <div id="ann-editor"
+        contenteditable="true"
+        class="ann-editor-body"
+        data-placeholder="Duyuru içeriğini buraya yaz..."
+        onpaste="annOnPaste(event)"
+        oninput="annUpdatePreview()"></div>
+
+      <div style="margin-top:14px;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Önizleme</div>
+        <div id="ann-preview-box" class="ann-preview-card-mini"></div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-top:14px;">
+        <input type="checkbox" id="ann-pinned" style="width:15px;height:15px;accent-color:var(--p600);">
+        <label for="ann-pinned" style="cursor:pointer;font-size:13px;">📌 Sabitle (en üstte göster)</label>
+      </div>
+
+      <input type="hidden" id="ann-edit-idx" value="-1">
+      <div class="fa">
+        <button class="btn btn-g" onclick="closeAnnEditor()">İptal</button>
+        <button class="btn btn-p" onclick="saveAnnouncement()">💾 Yayınla</button>
+      </div>
+    </div>
+
+    <!-- Duyuru listesi -->
+    <div style="margin-top:14px;" id="ann-list-sec">
+      <div id="ann-mgmt-list"><div class="empty" style="padding:16px 0;">Henüz duyuru yok.</div></div>
+    </div>
+  </div>
+
   <!-- Password Management (Admin only) -->
   <div class="sec" style="max-width:720px;margin-top:0;" id="pw-manage-sec">
-    <div class="sec-h"><div class="sec-t">🔑 Şifre Yönetimi</div></div>
     <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
       Her rol için şifreyi buradan değiştirebilirsin. Değişiklik anında Firebase'e kaydedilir ve tüm kullanıcılar için geçerli olur.
     </div>
@@ -1129,7 +1473,7 @@ const SEED_ISSUES = [{"cause":"Az katılım","event":"Gartic.io — 10.12.2025",
 const SEED_SOLARIAS = [{"name":"Solarias","role":"Solarias"},{"name":"TordenS","role":"Etkinlik Koordinatörü"},{"name":"Miva","role":"Solarias"},{"name":"Vehhab","role":"Etkinlik Koordinatörü"},{"name":"Tosbik","role":"Solarias"}];
 
 // ==================== DATA (Firebase Realtime Database) ====================
-const KEYS={members:'ls3_members',events:'ls3_events',games:'ls3_games',issues:'ls3_issues',solarias:'ls3_solarias'};
+const KEYS={members:'ls3_members',events:'ls3_events',games:'ls3_games',issues:'ls3_issues',solarias:'ls3_solarias',announcements:'ls3_announcements'};
 
 function load(k){
   // Read from in-memory cache (populated by Firebase on boot)
@@ -1159,6 +1503,7 @@ function seedIfEmpty(){
   if(!load('games').length){ window._fbCache.games=SEED_GAMES; window._fbSet(window._fbRef(window._fbDb,'ls3_games'),SEED_GAMES); }
   if(!load('issues').length){ window._fbCache.issues=SEED_ISSUES; window._fbSet(window._fbRef(window._fbDb,'ls3_issues'),SEED_ISSUES); }
   if(!load('solarias').length){ window._fbCache.solarias=SEED_SOLARIAS; window._fbSet(window._fbRef(window._fbDb,'ls3_solarias'),SEED_SOLARIAS); }
+  if(!window._fbCache.announcements){ window._fbCache.announcements=[]; }
 }
 
 // ==================== HELPERS ====================
@@ -1302,6 +1647,7 @@ function renderOverview(){
   document.getElementById('ov-avg').textContent=done.length?(total/done.length).toFixed(1):0;
 
   renderCountdown('ov-countdown');
+  renderAnnouncementsOverview();
 
   // Trend
   const monthlyMap={};
@@ -2289,6 +2635,229 @@ function deleteSolarias(idx){
   notify('🗑','Solarias çıkarıldı',name+' listeden kaldırıldı.','#f87171');
 }
 
+// ==================== ANNOUNCEMENTS ====================
+function loadAnnouncements(){
+  const val = window._fbCache && window._fbCache.announcements;
+  if(Array.isArray(val)) return val;
+  return [];
+}
+function saveAnnouncements(arr){
+  if(window._fbCache) window._fbCache.announcements = arr;
+  if(window._fbDb && window._fbRef && window._fbSet){
+    window._fbSet(window._fbRef(window._fbDb,'ls3_announcements'), arr)
+      .catch(e=>console.error('Firebase write error:', e));
+  }
+}
+
+function renderAnnouncementsOverview(){
+  const wrap = document.getElementById('ov-announcements-wrap');
+  if(!wrap) return;
+  // Gözlemci modunda duyurular gizli
+  if(currentRole === 'viewer'){ wrap.innerHTML=''; return; }
+  const anns = loadAnnouncements();
+  if(!anns.length){ wrap.innerHTML=''; return; }
+  const sorted = [...anns].sort((a,b)=>{
+    if(a.pinned && !b.pinned) return -1;
+    if(!a.pinned && b.pinned) return 1;
+    return b.createdAt - a.createdAt;
+  });
+
+  // Önceki daraltma durumunu koru
+  const wasCollapsed = wrap.dataset.collapsed === '1';
+
+  wrap.innerHTML = `
+    <div class="ann-ov-wrap">
+      <div class="ann-ov-header" onclick="toggleAnnSection()" style="cursor:pointer;user-select:none;">
+        <div class="ann-ov-label">Duyurular</div>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <span style="font-size:11px;color:var(--text3);margin-left:6px;">${anns.length} duyuru</span>
+        <button class="ann-toggle-btn" id="ann-toggle-btn" title="Daralt / Genişlet">
+          <span id="ann-toggle-icon">${wasCollapsed ? '▸' : '▾'}</span>
+        </button>
+      </div>
+      <div id="ann-ov-body" style="overflow:hidden;transition:max-height .3s ease,opacity .3s ease;${wasCollapsed ? 'max-height:0;opacity:0;' : 'max-height:2000px;opacity:1;'}">
+        ${sorted.map(a=>`
+          <div class="ann-card ${a.pinned?'pinned':''}">
+            <div class="ann-card-accent"></div>
+            <div class="ann-card-title">${escHtml(a.title)}</div>
+            <div class="ann-card-body">${a.body}</div>
+            <div class="ann-card-meta">
+              <span>👑 Admin</span>
+              <span class="ann-card-meta-sep">·</span>
+              <span>${fmtAnnDate(a.createdAt)}</span>
+              ${a.pinned?'<span class="ann-card-meta-sep">·</span><span style="color:var(--p400);">📌 Sabitlendi</span>':''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  // durumu tekrar yaz (innerHTML sıfırladı)
+  wrap.dataset.collapsed = wasCollapsed ? '1' : '0';
+}
+
+function toggleAnnSection(){
+  const wrap = document.getElementById('ov-announcements-wrap');
+  if(!wrap) return;
+  const body = document.getElementById('ann-ov-body');
+  const icon = document.getElementById('ann-toggle-icon');
+  const collapsed = wrap.dataset.collapsed === '1';
+  if(collapsed){
+    wrap.dataset.collapsed = '0';
+    if(body){ body.style.maxHeight='2000px'; body.style.opacity='1'; }
+    if(icon) icon.textContent = '▾';
+  } else {
+    wrap.dataset.collapsed = '1';
+    if(body){ body.style.maxHeight='0'; body.style.opacity='0'; }
+    if(icon) icon.textContent = '▸';
+  }
+}
+
+function renderAnnouncementsTab(){
+  const anns = loadAnnouncements();
+  const sorted = [...anns].sort((a,b)=>{
+    if(a.pinned && !b.pinned) return -1;
+    if(!a.pinned && b.pinned) return 1;
+    return b.createdAt - a.createdAt;
+  });
+  const isAdmin = currentRole === 'admin';
+  document.getElementById('ann-mgmt-list').innerHTML = sorted.length ? sorted.map((a,i)=>{
+    const origIdx = anns.indexOf(a);
+    const excerpt = a.body.replace(/<[^>]+>/g,'').slice(0,80)+(a.body.replace(/<[^>]+>/g,'').length>80?'…':'');
+    return`<div class="ann-mgmt-item ${a.pinned?'pinned':''}">
+      <div style="font-size:20px;flex-shrink:0;opacity:.7;">${a.pinned?'📌':'📢'}</div>
+      <div class="ann-mgmt-info">
+        <div class="ann-mgmt-title">${escHtml(a.title)}</div>
+        <div class="ann-mgmt-excerpt">${excerpt||'(boş)'}</div>
+        <div class="ann-mgmt-date">${fmtAnnDate(a.createdAt)}</div>
+      </div>
+      ${isAdmin?`<div style="display:flex;gap:6px;flex-shrink:0;align-self:center;">
+        <button class="btn btn-g btn-sm" onclick="editAnnouncement(${origIdx})">✎</button>
+        <button class="btn btn-g btn-sm" onclick="toggleAnnPin(${origIdx})" title="${a.pinned?'Sabitlemeyi kaldır':'Sabitle'}">${a.pinned?'📌':'📍'}</button>
+        <button class="btn btn-d btn-sm" onclick="deleteAnnouncement(${origIdx})">🗑</button>
+      </div>`:''}
+    </div>`;
+  }).join('') : '<div class="empty">Henüz duyuru yok.</div>';
+}
+
+function openAddAnnouncement(){
+  if(currentRole!=='admin'){notify('🔒','Yetki Yok','Duyuru eklemek için admin yetkisi gerekli.','#f87171');return;}
+  document.getElementById('ann-editor-sec').style.display='';
+  document.getElementById('ann-editor-title').textContent='📝 Yeni Duyuru';
+  document.getElementById('ann-title-in').value='';
+  document.getElementById('ann-editor').innerHTML='';
+  document.getElementById('ann-pinned').checked=false;
+  document.getElementById('ann-edit-idx').value='-1';
+  document.getElementById('ann-preview-box').innerHTML='<span style="color:var(--text3);font-size:12px;">Yazmaya başla, önizleme burada görünecek…</span>';
+  setTimeout(()=>{
+    const sec = document.getElementById('ann-editor-sec');
+    if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'});
+  }, 80);
+}
+
+function closeAnnEditor(){
+  document.getElementById('ann-editor-sec').style.display='none';
+}
+
+function editAnnouncement(idx){
+  const anns = loadAnnouncements();
+  const a = anns[idx];
+  if(!a) return;
+  document.getElementById('ann-editor-sec').style.display='';
+  document.getElementById('ann-editor-title').textContent='✎ Duyuru Düzenle';
+  document.getElementById('ann-title-in').value = a.title;
+  document.getElementById('ann-editor').innerHTML = a.body;
+  document.getElementById('ann-pinned').checked = !!a.pinned;
+  document.getElementById('ann-edit-idx').value = idx;
+  annUpdatePreview();
+  document.getElementById('ann-editor-sec').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function saveAnnouncement(){
+  if(currentRole!=='admin'){notify('🔒','Yetki Yok','Duyuru kaydetmek için admin yetkisi gerekli.','#f87171');return;}
+  const title = document.getElementById('ann-title-in').value.trim();
+  if(!title){alert('Başlık zorunlu!');return;}
+  const body = document.getElementById('ann-editor').innerHTML.trim();
+  if(!body||body==='<br>'||body===''){alert('Duyuru içeriği boş olamaz!');return;}
+  const pinned = document.getElementById('ann-pinned').checked;
+  const editIdx = parseInt(document.getElementById('ann-edit-idx').value);
+  const anns = loadAnnouncements();
+  if(editIdx>=0 && editIdx<anns.length){
+    anns[editIdx] = {...anns[editIdx], title, body, pinned, updatedAt: Date.now()};
+    notify('✅','Duyuru güncellendi',title,'#34d399');
+  } else {
+    anns.push({id: Date.now()+'', title, body, pinned, createdAt: Date.now()});
+    notify('📢','Duyuru yayınlandı!',title,'#c4b5fd');
+  }
+  saveAnnouncements(anns);
+  closeAnnEditor();
+  renderAnnouncementsTab();
+  renderAnnouncementsOverview();
+}
+
+function deleteAnnouncement(idx){
+  if(!confirm('Bu duyuruyu silmek istediğine emin misin?'))return;
+  const anns = loadAnnouncements();
+  const title = anns[idx]?.title||'';
+  anns.splice(idx,1);
+  saveAnnouncements(anns);
+  notify('🗑','Duyuru silindi',title,'#f87171');
+  renderAnnouncementsTab();
+  renderAnnouncementsOverview();
+}
+
+function toggleAnnPin(idx){
+  const anns = loadAnnouncements();
+  if(!anns[idx])return;
+  anns[idx].pinned = !anns[idx].pinned;
+  saveAnnouncements(anns);
+  renderAnnouncementsTab();
+  renderAnnouncementsOverview();
+}
+
+function annFormat(cmd){
+  document.getElementById('ann-editor').focus();
+  document.execCommand(cmd, false, null);
+  annUpdatePreview();
+}
+function annFontSize(size){
+  if(!size) return;
+  document.getElementById('ann-editor').focus();
+  document.execCommand('fontSize', false, size);
+  annUpdatePreview();
+}
+function annColor(color){
+  document.getElementById('ann-editor').focus();
+  document.execCommand('foreColor', false, color);
+  annUpdatePreview();
+}
+function annOnPaste(e){
+  e.preventDefault();
+  const text = (e.clipboardData||window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, text);
+  annUpdatePreview();
+}
+function annUpdatePreview(){
+  const title = document.getElementById('ann-title-in').value.trim();
+  const body = document.getElementById('ann-editor').innerHTML;
+  const box = document.getElementById('ann-preview-box');
+  if(!title && (!body||body==='<br>')){
+    box.innerHTML='<span style="color:var(--text3);font-size:12px;">Yazmaya başla, önizleme burada görünecek…</span>';
+    return;
+  }
+  box.innerHTML = `
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px;">${escHtml(title)||'<span style="color:var(--text3);">(başlık yok)</span>'}</div>
+    <div style="font-size:13px;line-height:1.7;color:var(--text);">${body}</div>
+  `;
+}
+
+function fmtAnnDate(ts){
+  if(!ts) return '—';
+  const d = new Date(ts);
+  return d.getDate()+' '+(TR_MONTHS[d.getMonth()]||'')+' '+d.getFullYear()+', '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
 // ==================== ISSUES ====================
 function renderIssues(){
   const issues=load('issues');
@@ -3213,7 +3782,7 @@ function checkAnniversary(){
 // ==================== INIT (auth onayından SONRA çağrılır) ====================
 window._bootApp = async function(){
   // Şimdi tüm verileri yükle
-  const KEYS = {members:'ls3_members', events:'ls3_events', games:'ls3_games', issues:'ls3_issues', solarias:'ls3_solarias'};
+  const KEYS = {members:'ls3_members', events:'ls3_events', games:'ls3_games', issues:'ls3_issues', solarias:'ls3_solarias', announcements:'ls3_announcements'};
   const loadingOverlay = document.getElementById('loading-overlay');
   // Mini yükleme göstergesi
   const mini = document.createElement('div');
@@ -3463,6 +4032,9 @@ function applyRoleRestrictions(){
   // Şifre yönetimi sadece admin
   const pwSec = document.getElementById('pw-manage-sec');
   if(pwSec) pwSec.style.display = currentRole==='admin' ? 'block' : 'none';
+  const annSec = document.getElementById('ann-settings-sec');
+  if(annSec) annSec.style.display = currentRole==='admin' ? 'block' : 'none';
+  if(currentRole==='admin') renderAnnouncementsTab();
 
   // İlk tab
   const firstAllowed = allowed[0] || 'overview';
