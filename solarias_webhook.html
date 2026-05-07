@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lumina Solarias — Etkinlik Yönetim Paneli</title>
+<title>Lumina Solarias — Etkinlik Yönetim Sistemi</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <!-- Firebase SDK -->
@@ -73,6 +73,25 @@
   --r:14px;--rs:8px;
   --sidebar-w:260px;
 }
+/* Açık tema */
+:root.light-theme{
+  --bg:#f4f2fb;--bg2:#ede9fa;--bg3:#e4dff5;--card:#fff;--card2:#f0ecff;
+  --text:#1a1535;--text2:#4a3f6b;--text3:#8b7ab0;
+  --green:#059669;--green-bg:rgba(5,150,105,0.1);
+  --red:#dc2626;--red-bg:rgba(220,38,38,0.08);
+  --amber:#d97706;--amber-bg:rgba(217,119,6,0.1);
+}
+:root.light-theme{
+  --accent:hsl(var(--hue),82%,38%);
+  --p200:hsl(var(--hue),82%,38%);
+  --p400:hsl(var(--hue),76%,46%);
+}
+:root.light-theme .logo-t{color:hsl(var(--hue),82%,38%);}
+:root.light-theme select option{background:#ede9fa;color:#1a1535;}
+:root.light-theme input,
+:root.light-theme select,
+:root.light-theme textarea{color:#1a1535;}
+:root.light-theme .ni.active{background:rgba(var(--p-r),var(--p-g),var(--p-b),0.18);}
 *{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:16px;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;}
@@ -266,7 +285,7 @@ select option{background:var(--bg2);}
 .sol-collapse-wrap{background:var(--card2);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:8px;overflow:hidden;cursor:pointer;transition:border-color .15s;}
 .sol-collapse-wrap:hover{border-color:var(--border2);}
 .sol-collapse-header{display:flex;align-items:center;gap:12px;padding:12px 14px;}
-.sol-collapse-body{padding:0 14px 12px;border-top:1px solid var(--border);}
+.sol-collapse-body{padding:12px 14px 12px;border-top:1px solid var(--border);}
 .sol-collapse-body.hidden{display:none;}
 .sol-note-area{background:var(--card);border:1px solid var(--border2);border-radius:var(--rs);padding:8px 10px;font-size:12.5px;color:var(--text2);min-height:36px;white-space:pre-wrap;cursor:pointer;}
 .sol-note-area:hover{border-color:var(--p400);}
@@ -742,7 +761,7 @@ body.viewer-mode .member-action-col { display: none !important; }
 <div class="sidebar">
   <div class="logo">
     <div class="logo-t">⬡ Lumina Solarias</div>
-    <div class="logo-s">Etkinlik Yönetim Paneli</div>
+    <div class="logo-s">Etkinlik Yönetim Sistemi</div>
     <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
       <span class="role-badge" id="sidebar-role-badge" style="flex:1;" onclick="currentRole!=='viewer'?logoutAuth():openLoginPanel()" title="Rol bilgisi"></span>
       <!-- Login panel -->
@@ -802,6 +821,13 @@ body.viewer-mode .member-action-col { display: none !important; }
         oninput="setHue(this.value)"
         style="width:100%;accent-color:var(--p400);cursor:pointer;height:4px;border-radius:4px;background:linear-gradient(to right,hsl(0,80%,60%),hsl(60,80%,60%),hsl(120,80%,60%),hsl(180,80%,60%),hsl(240,80%,60%),hsl(300,80%,60%),hsl(360,80%,60%));border:none;padding:0;">
       <div style="text-align:center;margin-top:5px;font-size:10px;color:var(--text3);"><span id="hue-val">265°</span></div>
+      <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">☀ Aydınlık / 🌙 Koyu</div>
+        <div style="display:flex;gap:8px;">
+          <button id="theme-light-btn" onclick="setLightMode(true)" style="flex:1;padding:7px;border-radius:var(--rs);border:1.5px solid var(--border2);background:var(--card2);color:var(--text2);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s;">☀ Açık</button>
+          <button id="theme-dark-btn" onclick="setLightMode(false)" style="flex:1;padding:7px;border-radius:var(--rs);border:1.5px solid var(--border2);background:var(--card2);color:var(--text2);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s;">🌙 Koyu</button>
+        </div>
+      </div>
     </div>
     <button class="theme-btn" onclick="toggleThemePopup(event)">
       <div class="theme-btn-dot" id="theme-btn-dot"></div>
@@ -844,7 +870,7 @@ body.viewer-mode .member-action-col { display: none !important; }
     <div class="sec-h"><div class="sec-t">Etkinlik Katılımcı Grafiği</div></div>
     <div style="position:relative;height:220px;"><canvas id="chart-part"></canvas></div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;">
     <div class="sec">
       <div class="sec-h"><div class="sec-t">Rol Dağılımı</div></div>
       <div id="ov-roles"></div>
@@ -852,6 +878,10 @@ body.viewer-mode .member-action-col { display: none !important; }
     <div class="sec">
       <div class="sec-h"><div class="sec-t">Son Etkinlikler</div></div>
       <div id="ov-recent"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-h"><div class="sec-t">🔥 En Uzun Seriler</div></div>
+      <div id="ov-streaks"></div>
     </div>
   </div>
 </div>
@@ -881,7 +911,7 @@ body.viewer-mode .member-action-col { display: none !important; }
     </div>
     <div class="tw">
       <table><thead><tr>
-        <th>Takma İsim</th><th>Kullanıcı Adı</th><th>Katılım</th><th>Rol</th><th>Durum</th><th>Son Katılım</th><th></th>
+        <th>Takma İsim</th><th>Kullanıcı Adı</th><th>Katılım</th><th>Rol</th><th>Durum</th><th>Son Katılım</th><th>🔥 Seri</th><th></th>
       </tr></thead>
       <tbody id="m-tbody"></tbody></table>
     </div>
@@ -1382,6 +1412,25 @@ body.viewer-mode .member-action-col { display: none !important; }
         </div>
         <div style="font-size:11.5px;color:var(--text3);margin-top:5px;" id="eve-sel-count">0 üye seçildi</div>
       </div>
+      <!-- GALERİ & ALINTALAR (sadece done etkinliklerde göster) -->
+      <div class="fgrp fgf" id="eve-gallery-section" style="display:none;">
+        <label>🖼 Galeri</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <label class="btn btn-g btn-sm" style="cursor:pointer;">📷 Resim Ekle<input type="file" accept="image/*" multiple style="display:none;" id="eve-gallery-input" onchange="eveAddImages(this)"></label>
+          <span style="font-size:11px;color:var(--text3);">Resimlerin üstüne tıklayarak sil</span>
+        </div>
+        <div class="ev-gallery-grid" id="eve-gallery-grid"></div>
+      </div>
+      <div class="fgrp fgf" id="eve-quotes-section" style="display:none;">
+        <label>💬 Unutulmaz Anlar</label>
+        <div id="eve-quotes-list"></div>
+        <div style="margin-top:8px;background:var(--card2);border:1px solid var(--border);border-radius:var(--rs);padding:10px;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px;">Yeni alıntı ekle</div>
+          <input id="eve-quote-text" placeholder="Komik/unutulmaz an..." style="margin-bottom:6px;">
+          <input id="eve-quote-author" placeholder="Kişi (opsiyonel)...">
+          <button class="btn btn-p btn-sm" style="margin-top:8px;" onclick="eveSaveQuote()">＋ Ekle</button>
+        </div>
+      </div>
     </div>
     <div class="fa">
       <button class="btn btn-g" onclick="closeModal('modal-ev-edit')">İptal</button>
@@ -1763,6 +1812,19 @@ function renderOverview(){
       <div class="ec-info"><div class="ec-name">${e.name}</div><div class="ec-meta">${(e.participants||[]).length} katılımcı${e.managers?' · '+e.managers:''}</div></div>
       ${!isViewerOv && e.score?`<div class="ec-score">${e.score}/10</div>`:''}
     </div>`).join('')||'<div class="empty">Henüz etkinlik yok.</div>';
+
+  // Streaks
+  const topStreaks = getTopStreaks(5);
+  const strEl = document.getElementById('ov-streaks');
+  if(strEl){
+    strEl.innerHTML = topStreaks.length ? topStreaks.map((x,i)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--card2);border-radius:var(--rs);border:1px solid var(--border);margin-bottom:6px;cursor:pointer;" onclick="openMemberDrawer('${x.m.id}')">
+        <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text3);min-width:20px;text-align:center;">${i+1}</div>
+        <div style="width:28px;height:28px;border-radius:50%;background:rgba(var(--p-r),var(--p-g),var(--p-b),0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--accent);flex-shrink:0;">${x.m.nick.charAt(0)}</div>
+        <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;">${x.m.nick}</div></div>
+        ${streakBadge(x.streak)}
+      </div>`).join('') : '<div class="empty" style="padding:16px 0;">Henüz seri yok.</div>';
+  }
 }
 
 // ==================== ROLE POPUP ====================
@@ -1866,6 +1928,7 @@ function renderMembers(){
     const returned=oldStatus==='Pasif'&&status==='Aktif';
     prevStatuses[m.id]=status;
     const lastEv=getLastEvent(m.id);
+    const streak=getMemberStreak(m.id);
     const isViewer = currentRole==='viewer';
     if(mArchiveView){
       html+=`<tr onclick="${isViewer?'':'openMemberDrawer(\''+m.id+'\')'}" style="cursor:${isViewer?'default':'pointer'};">
@@ -1875,6 +1938,7 @@ function renderMembers(){
         <td>${roleBadge(count)}</td>
         <td><span class="badge b-none">🗄 Arşiv</span></td>
         <td style="font-size:12px;color:var(--text3);">${lastEv?fmtDateShort(lastEv.date):'—'}</td>
+        <td>—</td>
         <td class="member-action-col" style="display:${isViewer?'none':''};" onclick="event.stopPropagation()">
           <div style="display:flex;gap:6px;">
             <button class="btn btn-g btn-sm" onclick="unarchiveMember('${m.id}')">↩ Geri Al</button>
@@ -1890,13 +1954,14 @@ function renderMembers(){
         <td>${roleBadge(count)}</td>
         <td>${status==='Aktif'?`<span class="badge b-act">● Aktif</span>`:`<span class="badge b-pas">● Pasif</span>`}${returned?' <span class="badge b-ret">↩ Geri döndü</span>':''}</td>
         <td style="font-size:12px;color:var(--text3);">${lastEv?fmtDateShort(lastEv.date):'—'}</td>
+        <td>${streak>0?streakBadge(streak):'<span style="font-size:11px;color:var(--text3);">—</span>'}</td>
         <td class="member-action-col" style="display:${isViewer?'none':''};">
           <button class="btn btn-g btn-sm" onclick="event.stopPropagation();openEditMember('${m.id}')">Düzenle</button>
         </td>
       </tr>`;
     }
   });
-  document.getElementById('m-tbody').innerHTML=html||`<tr><td colspan="7" class="empty">${mArchiveView?'Arşivde üye yok.':'Üye bulunamadı.'}</td></tr>`;
+  document.getElementById('m-tbody').innerHTML=html||`<tr><td colspan="8" class="empty">${mArchiveView?'Arşivde üye yok.':'Üye bulunamadı.'}</td></tr>`;
 }
 
 let mArchiveView=false;
@@ -2043,6 +2108,7 @@ function openMemberDrawer(id){
   const events=load('events');
   const myEvents=events.filter(e=>e.status==='done'&&(e.participants||[]).includes(id)).sort((a,b)=>b.date.localeCompare(a.date));
   const count=myEvents.length;
+  const streak=getMemberStreak(id);
   const status=m.archived?'Arşiv':getStatus(id);
   const typeMap={};
   myEvents.forEach(e=>{typeMap[e.type||'Diğer']=(typeMap[e.type||'Diğer']||0)+1;});
@@ -2068,7 +2134,8 @@ function openMemberDrawer(id){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
       <div class="sc"><div class="sl">Katılım</div><div class="sv" style="font-size:20px;">${count}</div></div>
       <div class="sc"><div class="sl">Durum</div><div style="margin-top:6px;">${m.archived?'<span class="badge b-none">🗄 Arşiv</span>':status==='Aktif'?'<span class="badge b-act">● Aktif</span>':'<span class="badge b-pas">● Pasif</span>'}</div></div>
-      <div class="sc" style="grid-column:1/-1;"><div class="sl">Rol</div><div style="margin-top:6px;">${roleBadge(count)}</div></div>
+      <div class="sc"><div class="sl">Rol</div><div style="margin-top:6px;">${roleBadge(count)}</div></div>
+      <div class="sc"><div class="sl">🔥 Seri</div><div style="margin-top:6px;">${streak>0?streakBadge(streak)+'<span style="font-size:11px;color:var(--text3);margin-left:4px;">ardışık</span>':'<span style="font-size:12px;color:var(--text3);">—</span>'}</div></div>
     </div>
     ${topType?`<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">En çok katıldığı tür: <strong style="color:var(--text2);">${topType[0]}</strong> (${topType[1]} etkinlik)</div>`:''}
     <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text2);">Etkinlik Geçmişi</div>
@@ -2253,12 +2320,23 @@ function openEvDetail(idx){
 
 // saveEditEvent moved above
 
-function deleteCurrentEvent(){
+async function deleteCurrentEvent(){
   if(!guardWrite())return;
   if(currentEvIdx===-1)return;
   const events=load('events');
-  const name=events[currentEvIdx].name;
+  const ev=events[currentEvIdx];
+  const name=ev.name;
   if(!confirm(`"${name}" etkinliğini silmek istediğine emin misin?`))return;
+  // Firebase'den galeri ve alıntıları sil
+  const evKey='ev_'+(ev.date+'_'+ev.name).replace(/[^a-zA-Z0-9_]/g,'_');
+  if(window._fbDb && window._fbRef && window._fbSet){
+    try{ await window._fbSet(window._fbRef(window._fbDb,'ls_ev_gallery/'+evKey), null); }catch(e){}
+    try{ await window._fbSet(window._fbRef(window._fbDb,'ls_ev_quotes/'+evKey), null); }catch(e){}
+  }
+  if(window._fbCache){
+    if(window._fbCache._evGallery) delete window._fbCache._evGallery[evKey];
+    if(window._fbCache._evQuotes) delete window._fbCache._evQuotes[evKey];
+  }
   events.splice(currentEvIdx,1);
   save('events',events);
   closeModal('modal-ev-detail');
@@ -2373,6 +2451,12 @@ function completeEvent(){
           webhookMilestone(m.nick, ms.role, newCount, m.id);
         }
       });
+      // Streak kontrol
+      const streak=getMemberStreak(id);
+      const streakMilestones=[5,10,15,20,25];
+      if(streakMilestones.includes(streak)){
+        notify('🔥',`${m.nick} ${streak} seri!`,`Ardışık ${streak} etkinlik katılımı!`,'#fbbf24');
+      }
     }
   });
   // Kalite kontrol
@@ -2922,9 +3006,12 @@ async function deleteEvImage(evKey, idx){
   // Önce cache'i güncelle
   if(!window._fbCache._evGallery) window._fbCache._evGallery = {};
   window._fbCache._evGallery[evKey] = gallery;
-  // Sonra firebase'e kaydet
-  if(window._fbDb && window._fbSet && window._fbRef)
-    await window._fbSet(window._fbRef(window._fbDb,'ls_ev_gallery/'+evKey), gallery).catch(()=>{});
+  // Sonra firebase'e kaydet (boşsa null ile sil)
+  if(window._fbDb && window._fbSet && window._fbRef){
+    const val = gallery.length > 0 ? gallery : null;
+    await window._fbSet(window._fbRef(window._fbDb,'ls_ev_gallery/'+evKey), val).catch(()=>{});
+    if(val === null) delete window._fbCache._evGallery[evKey];
+  }
   const grid = document.getElementById('ev-gallery-'+evKey);
   if(grid) reRenderGalleryGrid(evKey, grid);
 }
@@ -3477,6 +3564,18 @@ function openEditEventModal(){
   ).join('');
   eveSelectedMembers=[...(e.participants||[])];
   renderEvePicker();updateEveSelTags();
+
+  // Galeri & Alıntı bölümleri — sadece tamamlanmış etkinliklerde göster
+  const eveKey='ev_'+(e.date+'_'+e.name).replace(/[^a-zA-Z0-9_]/g,'_');
+  window._eveCurrentKey = eveKey;
+  const isDone = e.status==='done';
+  document.getElementById('eve-gallery-section').style.display = isDone ? '' : 'none';
+  document.getElementById('eve-quotes-section').style.display = isDone ? '' : 'none';
+  if(isDone){
+    eveRenderGallery();
+    eveRenderQuotes();
+  }
+
   closeModal('modal-ev-detail');
   openModal('modal-ev-edit');
 }
@@ -3541,6 +3640,99 @@ function saveEditEvent(){
   renderEvents();renderWeekly();renderOverview();updateSidebar();renderMembers();
 }
 
+// ==================== EDIT EVENT GALERİ & ALINTI ====================
+function eveRenderGallery(){
+  const evKey = window._eveCurrentKey;
+  if(!evKey) return;
+  const gallery = getEvGallery(evKey);
+  const grid = document.getElementById('eve-gallery-grid');
+  if(!grid) return;
+  grid.innerHTML = gallery.map((src,gi)=>`
+    <div style="position:relative;">
+      <img class="ev-gallery-img" src="${src}" onclick="openGalleryLightbox('${evKey}',${gi})" title="Büyütmek için tıkla">
+      <button onclick="eveDeleteImage(${gi})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:4px;padding:1px 5px;font-size:10px;cursor:pointer;" title="Sil">✕</button>
+    </div>`).join('') + (gallery.length===0?'<div style="font-size:11px;color:var(--text3);grid-column:1/-1;padding:8px 0;">Resim eklemek için butona tıkla.</div>':'');
+}
+
+function eveAddImages(input){
+  if(!guardWrite()) return;
+  const evKey = window._eveCurrentKey;
+  if(!evKey) return;
+  const files = Array.from(input.files);
+  if(!files.length) return;
+  const gallery = [...getEvGallery(evKey)];
+  let loaded = 0;
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = async ev=>{
+      gallery.push(ev.target.result);
+      loaded++;
+      if(loaded===files.length){
+        await saveEvGallery(evKey, gallery);
+        eveRenderGallery();
+        notify('🖼','Resimler Eklendi',files.length+' resim yüklendi.');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+
+async function eveDeleteImage(idx){
+  if(!guardWrite()) return;
+  const evKey = window._eveCurrentKey;
+  if(!evKey) return;
+  const gallery = JSON.parse(JSON.stringify(getEvGallery(evKey)));
+  gallery.splice(idx,1);
+  if(!window._fbCache._evGallery) window._fbCache._evGallery={};
+  window._fbCache._evGallery[evKey]=gallery;
+  if(window._fbDb && window._fbSet && window._fbRef){
+    const val = gallery.length>0 ? gallery : null;
+    await window._fbSet(window._fbRef(window._fbDb,'ls_ev_gallery/'+evKey), val).catch(()=>{});
+    if(val===null) delete window._fbCache._evGallery[evKey];
+  }
+  eveRenderGallery();
+}
+
+function eveRenderQuotes(){
+  const evKey = window._eveCurrentKey;
+  if(!evKey) return;
+  const quotes = getEvQuotes(evKey);
+  const wrap = document.getElementById('eve-quotes-list');
+  if(!wrap) return;
+  wrap.innerHTML = quotes.map((q,qi)=>`
+    <div class="quote-item" style="margin-bottom:6px;">
+      <div class="quote-text">"${escHtml(q.text)}"</div>
+      ${q.author?'<div class="quote-author">— '+escHtml(q.author)+'</div>':''}
+      <button class="quote-del" onclick="eveDeleteQuote(${qi})">✕</button>
+    </div>`).join('') + (quotes.length===0?'<div style="font-size:11px;color:var(--text3);padding:4px 0;">Henüz alıntı yok.</div>':'');
+}
+
+async function eveSaveQuote(){
+  if(!guardWrite()) return;
+  const evKey = window._eveCurrentKey;
+  if(!evKey) return;
+  const text = document.getElementById('eve-quote-text').value.trim();
+  if(!text){ notify('⚠','Boş','Alıntı metni boş olamaz.','#fbbf24'); return; }
+  const author = document.getElementById('eve-quote-author').value.trim();
+  const quotes = [...getEvQuotes(evKey), {text, author}];
+  await saveEvQuotesData(evKey, quotes);
+  document.getElementById('eve-quote-text').value='';
+  document.getElementById('eve-quote-author').value='';
+  eveRenderQuotes();
+  notify('💬','Alıntı Eklendi','');
+}
+
+async function eveDeleteQuote(idx){
+  if(!guardWrite()) return;
+  const evKey = window._eveCurrentKey;
+  if(!evKey) return;
+  const quotes = [...getEvQuotes(evKey)];
+  quotes.splice(idx,1);
+  await saveEvQuotesData(evKey, quotes);
+  eveRenderQuotes();
+}
+
 // Quick add member from picker
 function openQuickAddMemberFromEdit(){
   document.getElementById('qm-source').value='edit';
@@ -3589,7 +3781,12 @@ function solDrop(e,targetIdx){
 // ==================== MODAL HELPERS ====================
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
-document.querySelectorAll('.mbg').forEach(bg=>bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('open');}));
+// Click-outside to close modals — event delegation (modal HTML sayfanın altında olduğu için)
+document.addEventListener('click', function(e){
+  if(e.target && e.target.classList && e.target.classList.contains('mbg')){
+    e.target.classList.remove('open');
+  }
+});
 
 
 // ==================== DISCORD WEBHOOK ====================
@@ -3783,9 +3980,9 @@ async function sendWebhook(payload, logTitle){
   // Bu olmadan Discord mention'ları ping atmaz
   const payloadStr = JSON.stringify(payload);
   const allIds = [...new Set([...payloadStr.matchAll(/<@(\d+)>/g)].map(m=>m[1]))];
-  if(allIds.length){
-    payload.allowed_mentions = { parse: [], users: allIds };
-  }
+  const allowed = { parse: [] };
+  if(allIds.length) allowed.users = allIds;
+  if(allIds.length) payload.allowed_mentions = allowed;
   try {
     const r = await fetch(url, {
       method:'POST',
@@ -3859,7 +4056,8 @@ function _evDiscordTsDate(date){
 // ── Etkinlik planlandı ───────────────────────────────────────────────────────
 function webhookPlanEvent(ev){
   if(!webhookOn('onPlan')) return;
-  sendWebhook({ embeds:[{
+  sendWebhook({
+    embeds:[{
     title: '📅  Yeni Etkinlik Planlandı',
     color: 0x7C3AED,
     description: `### ${ev.name}\nTakvime eklendi — katılmak için hazır ol! 🎯`,
@@ -3995,7 +4193,8 @@ function checkUpcomingReminder(){
   const tomorrow = new Date(now.getTime() + 24*60*60*1000).toISOString().split('T')[0];
   events.filter(e=>e.status==='planned' && e.date===tomorrow).forEach(ev=>{
     _reminderSent = true;
-    sendWebhook({ embeds:[{
+    sendWebhook({
+      embeds:[{
       title: '⏰  Yarın Etkinlik Var!',
       color: 0xC4B5FD,
       description: `**${ev.name}** etkinliğine 24 saatten az kaldı! Hazırlan 🎯`,
@@ -4310,7 +4509,45 @@ function checkAnniversary(){
 }
 
 
-// ==================== INIT (auth onayından SONRA çağrılır) ====================
+// ==================== STREAK SİSTEMİ ====================
+// Streak: üyenin son kaç ardışık etkinliğe katıldığı (herhangi bir etkinlik atlandıysa sıfırlanır)
+function getMemberStreak(memberId){
+  const events = load('events').filter(e=>e.status==='done');
+  if(!events.length) return 0;
+  // Tarihe göre sırala (eskiden yeniye)
+  const sorted = [...events].sort((a,b)=>a.date.localeCompare(b.date));
+  let streak = 0;
+  // Sondan başa git
+  for(let i=sorted.length-1; i>=0; i--){
+    const participated = (sorted[i].participants||[]).includes(memberId);
+    if(participated){
+      streak++;
+    } else {
+      break; // İlk atladığında dur
+    }
+  }
+  return streak;
+}
+
+function streakBadge(streak){
+  if(streak<=0) return '';
+  let icon='🔥';
+  let color='var(--amber)';
+  let bg='var(--amber-bg)';
+  if(streak>=20){ icon='🏆'; color='#fbbf24'; }
+  else if(streak>=10){ icon='⚡'; color='#c4b5fd'; bg='rgba(196,181,253,0.15)'; }
+  else if(streak>=5){ icon='🔥'; color='var(--amber)'; }
+  else { icon='✨'; color='var(--p400)'; bg='rgba(var(--p-r),var(--p-g),var(--p-b),0.12)'; }
+  return `<span class="badge" style="background:${bg};color:${color};font-size:11px;">${icon} ${streak} seri</span>`;
+}
+
+function getTopStreaks(n=3){
+  const members = load('members').filter(m=>!m.archived);
+  return members.map(m=>({m, streak: getMemberStreak(m.id)}))
+    .filter(x=>x.streak>0)
+    .sort((a,b)=>b.streak-a.streak)
+    .slice(0,n);
+}
 window._bootApp = async function(){
   // Şimdi tüm verileri yükle
   const KEYS = {members:'ls3_members', events:'ls3_events', games:'ls3_games', issues:'ls3_issues', solarias:'ls3_solarias', announcements:'ls3_announcements'};
@@ -4339,6 +4576,7 @@ window._bootApp = async function(){
   currentHue = parseInt((()=>{try{return localStorage.getItem('ls_personal_hue');}catch(e){return null;}})() || (window._fbCache&&window._fbCache._hue) || '265');
   seedIfEmpty();
   initTheme();
+  initLightMode();
   updateSidebar();
   applyRoleRestrictions();
   updateRoleBadge();
@@ -4875,6 +5113,48 @@ const THEME_PRESETS=[
 ];
 let currentHue=parseInt((()=>{try{return localStorage.getItem('ls_personal_hue');}catch(e){return null;}})() || (window._fbCache&&window._fbCache._hue) || '265');
 
+// ==================== LIGHT / DARK MODE ====================
+function setLightMode(isLight){
+  try{ localStorage.setItem('ls_light_mode', isLight?'1':'0'); }catch(e){}
+  applyLightMode(isLight);
+}
+function applyLightMode(isLight){
+  if(isLight){
+    document.documentElement.classList.add('light-theme');
+  } else {
+    document.documentElement.classList.remove('light-theme');
+  }
+  updateLightModeButtons();
+}
+function updateLightModeButtons(){
+  const isLight = document.documentElement.classList.contains('light-theme');
+  const lb = document.getElementById('theme-light-btn');
+  const db = document.getElementById('theme-dark-btn');
+  if(!lb||!db) return;
+  if(isLight){
+    lb.style.background='rgba(var(--p-r),var(--p-g),var(--p-b),0.2)';
+    lb.style.color='var(--p600)';
+    lb.style.borderColor='var(--p400)';
+    db.style.background='var(--card2)';
+    db.style.color='var(--text2)';
+    db.style.borderColor='var(--border2)';
+  } else {
+    db.style.background='rgba(var(--p-r),var(--p-g),var(--p-b),0.2)';
+    db.style.color='var(--p600)';
+    db.style.borderColor='var(--p400)';
+    lb.style.background='var(--card2)';
+    lb.style.color='var(--text2)';
+    lb.style.borderColor='var(--border2)';
+  }
+}
+function initLightMode(){
+  try{
+    const v = localStorage.getItem('ls_light_mode');
+    // Varsayılan: koyu (null veya '0' = koyu, '1' = açık)
+    applyLightMode(v==='1');
+  }catch(e){ applyLightMode(false); }
+}
+
 function setHue(hue){
   hue=parseInt(hue);
   currentHue=hue;
@@ -4979,6 +5259,7 @@ function initTheme(){
   document.getElementById('hue-val').textContent=hue+'°';
   document.getElementById('hue-slider').value=hue;
   renderThemePresets();
+  setTimeout(updateLightModeButtons, 50);
 }
 // initTheme is called inside _bootApp after Firebase loads
 
