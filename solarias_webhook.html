@@ -1542,6 +1542,14 @@ body.viewer-mode .member-action-col { display: none !important; }
       <div class="fgrp fgf"><label>Etkinlik *</label><select id="iss-ev"><option value="">— Seç —</option></select></div>
       <div class="fgrp fgf"><label>Olumsuzluk *</label><textarea id="iss-txt" rows="3" placeholder="Neler yaşandı?"></textarea></div>
       <div class="fgrp fgf"><label>Sebep</label><textarea id="iss-cause" rows="2" placeholder="Neden oldu?"></textarea></div>
+      <div class="fgrp fgf">
+        <label>Görsel <span style="color:var(--text3);font-weight:400;">(opsiyonel)</span></label>
+        <label style="display:flex;align-items:center;gap:8px;background:var(--card2);border:1.5px dashed var(--border2);border-radius:var(--rs);padding:10px 13px;cursor:pointer;font-size:12.5px;color:var(--text2);">
+          📷 Resim Seç
+          <input type="file" id="iss-img" accept="image/*" style="display:none;" onchange="issPreviewImg(this,'iss-img-preview')">
+        </label>
+        <div id="iss-img-preview" style="margin-top:6px;"></div>
+      </div>
     </div>
     <div class="fa">
       <button class="btn btn-g" onclick="closeModal('modal-add-issue')">İptal</button>
@@ -1559,6 +1567,14 @@ body.viewer-mode .member-action-col { display: none !important; }
       <div class="fgrp fgf"><label>Etkinlik</label><select id="ei-ev"></select></div>
       <div class="fgrp fgf"><label>Olumsuzluk</label><textarea id="ei-txt" rows="3"></textarea></div>
       <div class="fgrp fgf"><label>Sebep</label><textarea id="ei-cause" rows="2"></textarea></div>
+      <div class="fgrp fgf">
+        <label>Görsel <span style="color:var(--text3);font-weight:400;">(opsiyonel, değiştirmek için seç)</span></label>
+        <label style="display:flex;align-items:center;gap:8px;background:var(--card2);border:1.5px dashed var(--border2);border-radius:var(--rs);padding:10px 13px;cursor:pointer;font-size:12.5px;color:var(--text2);">
+          📷 Resim Seç
+          <input type="file" id="ei-img" accept="image/*" style="display:none;" onchange="issPreviewImg(this,'ei-img-preview')">
+        </label>
+        <div id="ei-img-preview" style="margin-top:6px;"></div>
+      </div>
     </div>
     <div class="fa">
       <button class="btn btn-d btn-sm" onclick="deleteIssue(parseInt(document.getElementById('ei-idx').value))">Sil</button>
@@ -2182,7 +2198,7 @@ function renderEvents(){
   document.getElementById('ev-list').innerHTML=allSorted.map(e=>{
     const idx=events.indexOf(e);
     const pc=(e.participants||[]).length;
-    const issues=load('issues').filter(i=>i.event&&i.event.includes(e.name));
+    const evLabel=e.name+' — '+fmtDateShort(e.date);const issues=load('issues').filter(i=>i.event&&i.event===evLabel);
     const isViewer=currentRole==='viewer';
     return`<div class="ec" onclick="openEvDetail(${idx})" style="cursor:pointer;">
       <div class="ec-db"><div class="ec-dd">${e.date.split('-')[2]}</div><div class="ec-dm">${monthShort(e.date)}</div></div>
@@ -2211,11 +2227,11 @@ function openEvDetail(idx){
   const events=load('events');
   const e=events[idx];
   const members=load('members');
-  const issues=load('issues').filter(i=>i.event&&i.event.includes(e.name));
+  const evLabel=e.name+' — '+fmtDateShort(e.date);const issues=load('issues').filter(i=>i.event&&i.event===evLabel);
 
   document.getElementById('evd-title').textContent=e.name;
 
-  const parts=(e.participants||[]).map(id=>{const m=members.find(x=>x.id===id);return m?m.nick:id;});
+  const parts=(e.participants||[]).map(id=>{const m=members.find(x=>x.id===id&&!x.archived);return m?m.nick:null;}).filter(Boolean);
 
   let body='';
   const isViewer=currentRole==='viewer';
@@ -3463,6 +3479,7 @@ function renderIssues(){
       <div class="issue-ev">${iss.event}</div>
       <div class="issue-txt">${iss.issue}</div>
       ${iss.cause?`<div class="issue-cause">Sebep: ${iss.cause}</div>`:''}
+      ${iss.image?`<div style="margin-top:10px;"><img src="${iss.image}" style="max-width:100%;max-height:220px;border-radius:var(--rs);border:1px solid var(--border2);cursor:pointer;" onclick="openIssueImgLightbox('${iss.image}')" title="Görseli büyüt"></div>`:''}
       <div style="margin-top:8px;display:flex;gap:6px;">
         <button class="btn btn-g btn-sm" onclick="openEditIssue(${i})">Düzenle</button>
         <button class="btn btn-d btn-sm" onclick="deleteIssue(${i})">Sil</button>
@@ -3477,6 +3494,8 @@ function openAddIssue(){
     [...events].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`<option value="${e.name} — ${fmtDateShort(e.date)}">${e.name} (${fmtDateShort(e.date)})</option>`).join('');
   document.getElementById('iss-txt').value='';
   document.getElementById('iss-cause').value='';
+  document.getElementById('iss-img').value='';
+  document.getElementById('iss-img-preview').innerHTML='';
   openModal('modal-add-issue');
 }
 
@@ -3484,11 +3503,22 @@ function saveIssue(){
   const ev=document.getElementById('iss-ev').value;
   const txt=document.getElementById('iss-txt').value.trim();
   if(!ev||!txt)return alert('Etkinlik ve olumsuzluk zorunlu!');
-  const issues=load('issues');
-  issues.push({event:ev,issue:txt,cause:document.getElementById('iss-cause').value.trim()});
-  save('issues',issues);closeModal('modal-add-issue');renderIssues();
-  notify('⚠','Olumsuzluk kaydedildi','Sorun başarıyla eklendi.','#f87171');
-  webhookIssue(document.getElementById('iss-ev').value, txt);
+  const cause=document.getElementById('iss-cause').value.trim();
+  const imgFile=document.getElementById('iss-img').files[0];
+  function doSave(imageData){
+    const issues=load('issues');
+    const obj={event:ev,issue:txt,cause};
+    if(imageData) obj.image=imageData;
+    issues.push(obj);
+    save('issues',issues);closeModal('modal-add-issue');renderIssues();
+    notify('⚠','Olumsuzluk kaydedildi','Sorun başarıyla eklendi.','#f87171');
+    webhookIssue(ev, txt);
+  }
+  if(imgFile){
+    const r=new FileReader();
+    r.onload=e=>doSave(e.target.result);
+    r.readAsDataURL(imgFile);
+  } else { doSave(null); }
 }
 
 function openEditIssue(i){
@@ -3501,13 +3531,34 @@ function openEditIssue(i){
   document.getElementById('ei-txt').value=iss.issue;
   document.getElementById('ei-cause').value=iss.cause||'';
   openModal('modal-edit-issue');
+
+  document.getElementById('ei-img').value='';
+  const prevWrap=document.getElementById('ei-img-preview');
+  if(iss.image){prevWrap.innerHTML=`<img src="${iss.image}" style="max-width:100%;max-height:120px;border-radius:var(--rs);border:1px solid var(--border2);margin-top:4px;"><button onclick="document.getElementById('ei-img-preview').innerHTML='';document.getElementById('ei-current-img').value=''" style="display:block;margin-top:4px;font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;">✕ Görseli kaldır</button><input type="hidden" id="ei-current-img" value="${iss.image}">`;}else{prevWrap.innerHTML='';const h=document.getElementById('ei-current-img');if(h)h.remove();}
+  openModal('modal-edit-issue');
 }
 
 function updateIssue(){
   const i=parseInt(document.getElementById('ei-idx').value);
   const issues=load('issues');
-  issues[i]={event:document.getElementById('ei-ev').value,issue:document.getElementById('ei-txt').value.trim(),cause:document.getElementById('ei-cause').value.trim()};
-  save('issues',issues);closeModal('modal-edit-issue');renderIssues();
+  const ev=document.getElementById('ei-ev').value;
+  const txt=document.getElementById('ei-txt').value.trim();
+  const cause=document.getElementById('ei-cause').value.trim();
+  const imgFile=document.getElementById('ei-img').files[0];
+  const currentImgEl=document.getElementById('ei-current-img');
+  const currentImg=currentImgEl?currentImgEl.value:'';
+  function doUpdate(imageData){
+    const obj={event:ev,issue:txt,cause};
+    if(imageData) obj.image=imageData;
+    else if(currentImg) obj.image=currentImg;
+    issues[i]=obj;
+    save('issues',issues);closeModal('modal-edit-issue');renderIssues();
+  }
+  if(imgFile){
+    const r=new FileReader();
+    r.onload=e=>doUpdate(e.target.result);
+    r.readAsDataURL(imgFile);
+  } else { doUpdate(null); }
 }
 
 function deleteIssue(i){
@@ -3515,6 +3566,30 @@ function deleteIssue(i){
   const issues=load('issues');
   issues.splice(i,1);save('issues',issues);
   closeModal('modal-edit-issue');renderIssues();
+}
+
+function issPreviewImg(input, previewId){
+  const file=input.files[0];
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    document.getElementById(previewId).innerHTML=`<img src="${e.target.result}" style="max-width:100%;max-height:120px;border-radius:var(--rs);border:1px solid var(--border2);">`;
+  };
+  r.readAsDataURL(file);
+}
+
+function openIssueImgLightbox(src){
+  let lb=document.getElementById('issue-img-lightbox');
+  if(!lb){
+    lb=document.createElement('div');
+    lb.id='issue-img-lightbox';
+    lb.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:500;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+    lb.onclick=()=>lb.remove();
+    document.body.appendChild(lb);
+  }
+  lb.innerHTML=`<img src="${src}" style="max-width:92vw;max-height:88vh;border-radius:var(--r);box-shadow:0 8px 48px rgba(0,0,0,0.6);">
+    <span style="position:absolute;top:16px;right:20px;font-size:26px;color:#fff;cursor:pointer;line-height:1;">✕</span>`;
+  lb.style.display='flex';
 }
 
 
