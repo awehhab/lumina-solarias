@@ -4243,7 +4243,7 @@ function webhookPlanEvent(ev){
     embeds:[{
     title: '📅  Yeni Etkinlik Planlandı',
     color: 0x7C3AED,
-    description: `### ${ev.name}\nTakvime eklendi — katılmak için hazır ol! 🎯`,
+    description: `### ${ev.name}\nTakvime eklendi!`,
     fields:[
       {name:'📅 Tarih & Saat', value: _evDiscordTs(ev.date, ev.time), inline:true},
       {name:'🎭 Tür',          value: ev.type||'Oyun',                inline:true},
