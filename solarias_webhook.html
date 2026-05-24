@@ -939,7 +939,10 @@ body.viewer-mode .member-action-col { display: none !important; }
 <div class="tab" id="tab-weekly">
   <div class="ph">
     <div><div class="pt">Haftalık Plan</div><div class="ps">Takvim üzerinde etkinlik planlama</div></div>
-    <button class="btn btn-p" onclick="openAddEventFlow()">＋ Etkinlik Ekle</button>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-g" onclick="webhookWeeklyPlan()" title="Planı Discord'a gönder" id="wk-share-btn">📆 Planı Paylaş</button>
+      <button class="btn btn-p" onclick="openAddEventFlow()">＋ Etkinlik Ekle</button>
+    </div>
   </div>
   <div class="sec">
     <div class="sec-h"><div class="sec-t">⏱ Yaklaşan Etkinlikler</div></div>
@@ -1049,7 +1052,10 @@ body.viewer-mode .member-action-col { display: none !important; }
   <div class="sec" style="max-width:720px;margin-top:0;">
     <div class="sec-h">
       <div class="sec-t">📜 Son Gönderimler</div>
-      <button class="btn btn-g btn-sm" onclick="clearWebhookLog()">Temizle</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-amber btn-sm" onclick="resetWebhookDailyLimits()" title="Bugünkü gönderim kilitlerini sıfırla (test için)">🔄 Günlük Sıfırla</button>
+        <button class="btn btn-g btn-sm" onclick="clearWebhookLog()">Temizle</button>
+      </div>
     </div>
     <div id="webhook-log" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;">
       <div style="font-size:12px;color:var(--text3);padding:8px 0;">Henüz gönderim yok.</div>
@@ -1543,12 +1549,13 @@ body.viewer-mode .member-action-col { display: none !important; }
       <div class="fgrp fgf"><label>Olumsuzluk *</label><textarea id="iss-txt" rows="3" placeholder="Neler yaşandı?"></textarea></div>
       <div class="fgrp fgf"><label>Sebep</label><textarea id="iss-cause" rows="2" placeholder="Neden oldu?"></textarea></div>
       <div class="fgrp fgf">
-        <label>Görsel <span style="color:var(--text3);font-weight:400;">(opsiyonel)</span></label>
-        <label style="display:flex;align-items:center;gap:8px;background:var(--card2);border:1.5px dashed var(--border2);border-radius:var(--rs);padding:10px 13px;cursor:pointer;font-size:12.5px;color:var(--text2);">
-          📷 Resim Seç
-          <input type="file" id="iss-img" accept="image/*" style="display:none;" onchange="issPreviewImg(this,'iss-img-preview')">
-        </label>
-        <div id="iss-img-preview" style="margin-top:6px;"></div>
+        <label>📷 Görsel (opsiyonel)</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <label class="btn btn-g btn-sm" style="cursor:pointer;">Resim Seç<input type="file" accept="image/*" style="display:none;" id="iss-img-input" onchange="issLoadImage(this,'iss-img-preview')"></label>
+          <button class="btn btn-d btn-sm" onclick="issRemoveImage('iss-img-preview','iss-img-data')" type="button">Sil</button>
+        </div>
+        <input type="hidden" id="iss-img-data">
+        <div id="iss-img-preview" style="display:none;max-width:100%;border-radius:var(--rs);overflow:hidden;border:1px solid var(--border2);"><img id="iss-img-thumb" style="width:100%;max-height:200px;object-fit:cover;display:block;"></div>
       </div>
     </div>
     <div class="fa">
@@ -1568,12 +1575,13 @@ body.viewer-mode .member-action-col { display: none !important; }
       <div class="fgrp fgf"><label>Olumsuzluk</label><textarea id="ei-txt" rows="3"></textarea></div>
       <div class="fgrp fgf"><label>Sebep</label><textarea id="ei-cause" rows="2"></textarea></div>
       <div class="fgrp fgf">
-        <label>Görsel <span style="color:var(--text3);font-weight:400;">(opsiyonel, değiştirmek için seç)</span></label>
-        <label style="display:flex;align-items:center;gap:8px;background:var(--card2);border:1.5px dashed var(--border2);border-radius:var(--rs);padding:10px 13px;cursor:pointer;font-size:12.5px;color:var(--text2);">
-          📷 Resim Seç
-          <input type="file" id="ei-img" accept="image/*" style="display:none;" onchange="issPreviewImg(this,'ei-img-preview')">
-        </label>
-        <div id="ei-img-preview" style="margin-top:6px;"></div>
+        <label>📷 Görsel (opsiyonel)</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <label class="btn btn-g btn-sm" style="cursor:pointer;">Resim Seç<input type="file" accept="image/*" style="display:none;" id="ei-img-input" onchange="issLoadImage(this,'ei-img-preview')"></label>
+          <button class="btn btn-d btn-sm" onclick="issRemoveImage('ei-img-preview','ei-img-data')" type="button">Sil</button>
+        </div>
+        <input type="hidden" id="ei-img-data">
+        <div id="ei-img-preview" style="display:none;max-width:100%;border-radius:var(--rs);overflow:hidden;border:1px solid var(--border2);"><img id="ei-img-thumb" style="width:100%;max-height:200px;object-fit:cover;display:block;"></div>
       </div>
     </div>
     <div class="fa">
@@ -2198,7 +2206,8 @@ function renderEvents(){
   document.getElementById('ev-list').innerHTML=allSorted.map(e=>{
     const idx=events.indexOf(e);
     const pc=(e.participants||[]).length;
-    const evLabel=e.name+' — '+fmtDateShort(e.date);const issues=load('issues').filter(i=>i.event&&i.event===evLabel);
+    const _issueKey=e.name+' — '+fmtDateShort(e.date);
+    const issues=load('issues').filter(i=>i.event===_issueKey);
     const isViewer=currentRole==='viewer';
     return`<div class="ec" onclick="openEvDetail(${idx})" style="cursor:pointer;">
       <div class="ec-db"><div class="ec-dd">${e.date.split('-')[2]}</div><div class="ec-dm">${monthShort(e.date)}</div></div>
@@ -2227,11 +2236,12 @@ function openEvDetail(idx){
   const events=load('events');
   const e=events[idx];
   const members=load('members');
-  const evLabel=e.name+' — '+fmtDateShort(e.date);const issues=load('issues').filter(i=>i.event&&i.event===evLabel);
+  const _evIssueKey=e.name+' — '+fmtDateShort(e.date);
+  const issues=load('issues').filter(i=>i.event===_evIssueKey);
 
   document.getElementById('evd-title').textContent=e.name;
 
-  const parts=(e.participants||[]).map(id=>{const m=members.find(x=>x.id===id&&!x.archived);return m?m.nick:null;}).filter(Boolean);
+  const parts=(e.participants||[]).map(id=>{const m=members.find(x=>x.id===id);return m?m.nick:id;});
 
   let body='';
   const isViewer=currentRole==='viewer';
@@ -2456,6 +2466,15 @@ function completeEvent(){
   }
 
   // Role change notifications + webhook
+  // Streak kırılma kontrolü: bu etkinliğe katılmayan ama önceden serisi olan üyeler
+  const allActiveMembers=load('members').filter(m=>!m.archived);
+  allActiveMembers.forEach(m=>{
+    if(!evcSelectedMembers.includes(m.id)){
+      // Bu üye katılmadı — önceki streak'i hesapla (bu etkinlik HENÜ kaydedilmedi, yani mevcut streak geçerli)
+      const prevStreak=getMemberStreak(m.id);
+      if(prevStreak>=5) webhookStreakBroken(m.nick, m.id, prevStreak);
+    }
+  });
   evcSelectedMembers.forEach(id=>{
     const m=members.find(x=>x.id===id);
     if(m){
@@ -3401,6 +3420,7 @@ function saveAnnouncement(){
   } else {
     anns.push({id: Date.now()+'', title, body, pinned, createdAt: Date.now()});
     notify('📢','Duyuru yayınlandı!',title,'#c4b5fd');
+    webhookAnnouncement(title, body, pinned);
   }
   saveAnnouncements(anns);
   closeAnnEditor();
@@ -3472,6 +3492,29 @@ function fmtAnnDate(ts){
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ==================== ISSUES ====================
+function issLoadImage(input, previewId){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    // prefix previewId to get the right elements
+    const pre = previewId.replace('-preview','');
+    const dataEl = document.getElementById(pre+'-data');
+    const previewEl = document.getElementById(previewId);
+    const thumbEl = document.getElementById(pre+'-thumb');
+    if(dataEl) dataEl.value = ev.target.result;
+    if(previewEl) previewEl.style.display='';
+    if(thumbEl) thumbEl.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function issRemoveImage(previewId, dataId){
+  const pre = document.getElementById(previewId);
+  const dat = document.getElementById(dataId);
+  if(pre){ pre.style.display='none'; const img=pre.querySelector('img'); if(img) img.src=''; }
+  if(dat) dat.value='';
+}
+
 function renderIssues(){
   const issues=load('issues');
   document.getElementById('issue-list-wrap').innerHTML=issues.length?issues.map((iss,i)=>`
@@ -3479,7 +3522,7 @@ function renderIssues(){
       <div class="issue-ev">${iss.event}</div>
       <div class="issue-txt">${iss.issue}</div>
       ${iss.cause?`<div class="issue-cause">Sebep: ${iss.cause}</div>`:''}
-      ${iss.image?`<div style="margin-top:10px;"><img src="${iss.image}" style="max-width:100%;max-height:220px;border-radius:var(--rs);border:1px solid var(--border2);cursor:pointer;" onclick="openIssueImgLightbox('${iss.image}')" title="Görseli büyüt"></div>`:''}
+      ${iss.image?`<div style="margin-top:10px;border-radius:var(--rs);overflow:hidden;border:1px solid var(--border2);max-width:420px;"><img src="${iss.image}" style="width:100%;max-height:220px;object-fit:cover;display:block;cursor:pointer;" onclick="window.open(this.src,'_blank')" title="Büyütmek için tıkla"></div>`:''}
       <div style="margin-top:8px;display:flex;gap:6px;">
         <button class="btn btn-g btn-sm" onclick="openEditIssue(${i})">Düzenle</button>
         <button class="btn btn-d btn-sm" onclick="deleteIssue(${i})">Sil</button>
@@ -3494,8 +3537,7 @@ function openAddIssue(){
     [...events].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`<option value="${e.name} — ${fmtDateShort(e.date)}">${e.name} (${fmtDateShort(e.date)})</option>`).join('');
   document.getElementById('iss-txt').value='';
   document.getElementById('iss-cause').value='';
-  document.getElementById('iss-img').value='';
-  document.getElementById('iss-img-preview').innerHTML='';
+  issRemoveImage('iss-img-preview','iss-img-data');
   openModal('modal-add-issue');
 }
 
@@ -3503,22 +3545,14 @@ function saveIssue(){
   const ev=document.getElementById('iss-ev').value;
   const txt=document.getElementById('iss-txt').value.trim();
   if(!ev||!txt)return alert('Etkinlik ve olumsuzluk zorunlu!');
-  const cause=document.getElementById('iss-cause').value.trim();
-  const imgFile=document.getElementById('iss-img').files[0];
-  function doSave(imageData){
-    const issues=load('issues');
-    const obj={event:ev,issue:txt,cause};
-    if(imageData) obj.image=imageData;
-    issues.push(obj);
-    save('issues',issues);closeModal('modal-add-issue');renderIssues();
-    notify('⚠','Olumsuzluk kaydedildi','Sorun başarıyla eklendi.','#f87171');
-    webhookIssue(ev, txt);
-  }
-  if(imgFile){
-    const r=new FileReader();
-    r.onload=e=>doSave(e.target.result);
-    r.readAsDataURL(imgFile);
-  } else { doSave(null); }
+  const imgData=document.getElementById('iss-img-data').value||'';
+  const issues=load('issues');
+  const obj={event:ev,issue:txt,cause:document.getElementById('iss-cause').value.trim()};
+  if(imgData) obj.image=imgData;
+  issues.push(obj);
+  save('issues',issues);closeModal('modal-add-issue');renderIssues();
+  notify('⚠','Olumsuzluk kaydedildi','Sorun başarıyla eklendi.','#f87171');
+  webhookIssue(ev, txt);
 }
 
 function openEditIssue(i){
@@ -3530,35 +3564,28 @@ function openEditIssue(i){
   sel.innerHTML=[...events].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>`<option value="${e.name} — ${fmtDateShort(e.date)}" ${iss.event===e.name+' — '+fmtDateShort(e.date)?'selected':''}>${e.name} (${fmtDateShort(e.date)})</option>`).join('');
   document.getElementById('ei-txt').value=iss.issue;
   document.getElementById('ei-cause').value=iss.cause||'';
-  openModal('modal-edit-issue');
-
-  document.getElementById('ei-img').value='';
-  const prevWrap=document.getElementById('ei-img-preview');
-  if(iss.image){prevWrap.innerHTML=`<img src="${iss.image}" style="max-width:100%;max-height:120px;border-radius:var(--rs);border:1px solid var(--border2);margin-top:4px;"><button onclick="document.getElementById('ei-img-preview').innerHTML='';document.getElementById('ei-current-img').value=''" style="display:block;margin-top:4px;font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;">✕ Görseli kaldır</button><input type="hidden" id="ei-current-img" value="${iss.image}">`;}else{prevWrap.innerHTML='';const h=document.getElementById('ei-current-img');if(h)h.remove();}
+  // Mevcut görseli yükle
+  const pre=document.getElementById('ei-img-preview');
+  const dat=document.getElementById('ei-img-data');
+  const thumb=document.getElementById('ei-img-thumb');
+  if(iss.image){
+    dat.value=iss.image;
+    if(thumb) thumb.src=iss.image;
+    if(pre) pre.style.display='';
+  } else {
+    issRemoveImage('ei-img-preview','ei-img-data');
+  }
   openModal('modal-edit-issue');
 }
 
 function updateIssue(){
   const i=parseInt(document.getElementById('ei-idx').value);
   const issues=load('issues');
-  const ev=document.getElementById('ei-ev').value;
-  const txt=document.getElementById('ei-txt').value.trim();
-  const cause=document.getElementById('ei-cause').value.trim();
-  const imgFile=document.getElementById('ei-img').files[0];
-  const currentImgEl=document.getElementById('ei-current-img');
-  const currentImg=currentImgEl?currentImgEl.value:'';
-  function doUpdate(imageData){
-    const obj={event:ev,issue:txt,cause};
-    if(imageData) obj.image=imageData;
-    else if(currentImg) obj.image=currentImg;
-    issues[i]=obj;
-    save('issues',issues);closeModal('modal-edit-issue');renderIssues();
-  }
-  if(imgFile){
-    const r=new FileReader();
-    r.onload=e=>doUpdate(e.target.result);
-    r.readAsDataURL(imgFile);
-  } else { doUpdate(null); }
+  const imgData=document.getElementById('ei-img-data').value||'';
+  const obj={event:document.getElementById('ei-ev').value,issue:document.getElementById('ei-txt').value.trim(),cause:document.getElementById('ei-cause').value.trim()};
+  if(imgData) obj.image=imgData;
+  issues[i]=obj;
+  save('issues',issues);closeModal('modal-edit-issue');renderIssues();
 }
 
 function deleteIssue(i){
@@ -3566,30 +3593,6 @@ function deleteIssue(i){
   const issues=load('issues');
   issues.splice(i,1);save('issues',issues);
   closeModal('modal-edit-issue');renderIssues();
-}
-
-function issPreviewImg(input, previewId){
-  const file=input.files[0];
-  if(!file)return;
-  const r=new FileReader();
-  r.onload=e=>{
-    document.getElementById(previewId).innerHTML=`<img src="${e.target.result}" style="max-width:100%;max-height:120px;border-radius:var(--rs);border:1px solid var(--border2);">`;
-  };
-  r.readAsDataURL(file);
-}
-
-function openIssueImgLightbox(src){
-  let lb=document.getElementById('issue-img-lightbox');
-  if(!lb){
-    lb=document.createElement('div');
-    lb.id='issue-img-lightbox';
-    lb.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:500;display:flex;align-items:center;justify-content:center;cursor:pointer;';
-    lb.onclick=()=>lb.remove();
-    document.body.appendChild(lb);
-  }
-  lb.innerHTML=`<img src="${src}" style="max-width:92vw;max-height:88vh;border-radius:var(--r);box-shadow:0 8px 48px rgba(0,0,0,0.6);">
-    <span style="position:absolute;top:16px;right:20px;font-size:26px;color:#fff;cursor:pointer;line-height:1;">✕</span>`;
-  lb.style.display='flex';
 }
 
 
@@ -3656,7 +3659,8 @@ function openEditEventModal(){
 }
 
 function renderEvePicker(filter){
-  const members=load('members'),q=(filter||'').toLowerCase();
+  // Arşivlenen üyeleri listede gösterme
+  const members=load('members').filter(m=>!m.archived),q=(filter||'').toLowerCase();
   const filtered=q?members.filter(m=>m.nick.toLowerCase().includes(q)||m.user.toLowerCase().includes(q)):members;
   document.getElementById('eve-mp-list').innerHTML=filtered.map(m=>{
     const sel=eveSelectedMembers.includes(m.id);
@@ -3674,6 +3678,9 @@ function toggleEveMember(id){
 }
 function updateEveSelTags(){
   const members=load('members');
+  // Arşivlenen seçili üyeleri listeden çıkar, ama eveSelectedMembers'ı da güncelle
+  const archived=new Set(members.filter(m=>m.archived).map(m=>m.id));
+  eveSelectedMembers=eveSelectedMembers.filter(id=>!archived.has(id));
   document.getElementById('eve-sel-tags').innerHTML=eveSelectedMembers.map(id=>{
     const m=members.find(x=>x.id===id);
     return`<span class="sel-tag" onclick="toggleEveMember('${id}')">${m?m.nick:id}</span>`;
@@ -3686,6 +3693,12 @@ function saveEditEvent(){
   const idx=parseInt(document.getElementById('eve-idx').value);
   const events=load('events');
   const e=events[idx];
+  // Eski veriyi kaydetmeden önce kopyala (webhook diff için)
+  const oldSnap = {
+    name: e.name, date: e.date, time: e.time, type: e.type,
+    dur: e.dur, score: e.score, status: e.status,
+    managers: e.managers, participants: [...(e.participants||[])]
+  };
   const mgrs=[...document.querySelectorAll('#eve-mgr-wrap input:checked')].map(cb=>cb.value);
   const issueText=document.getElementById('eve-issue').value.trim();
   e.name=document.getElementById('eve-name').value.trim();
@@ -3707,10 +3720,9 @@ function saveEditEvent(){
       issues.push({event:key,issue:issueText,cause:''});save('issues',issues);
     }
   }
-  const _oldDate = events[idx]?.date;
   closeModal('modal-ev-edit');
   notify('✅','Etkinlik güncellendi',`${e.name} güncellendi.`,'#34d399');
-  webhookEditEvent(e, _oldDate);
+  webhookEditEvent(e, oldSnap);
   if(issueText) webhookIssue(`${e.name} — ${fmtDateShort(e.date)}`, issueText);
   renderEvents();renderWeekly();renderOverview();updateSidebar();renderMembers();
 }
@@ -3879,6 +3891,7 @@ const TOGGLE_GROUPS = [
     { key:'onLowAttend',label:'Az katılım (5 kişi altı)',     emoji:'📉', on:false },
     { key:'onRecord',   label:'Katılım rekoru kırıldığında',  emoji:'🎉', on:true  },
     { key:'onRepeat',   label:'Aynı oyun 3+ kez oynandığında',emoji:'🔄', on:false },
+    { key:'onWeeklyPlan',label:'Haftalık plan paylaşımı',    emoji:'📆', on:false },
   ]},
   { group: '👤 Üye', keys: [
     { key:'onMemberAdd',    label:'Üye eklendiğinde',         emoji:'👋', on:true  },
@@ -3888,6 +3901,7 @@ const TOGGLE_GROUPS = [
     { key:'onMilestone',    label:'Rol kazanıldığında',       emoji:'🏆', on:true  },
     { key:'onGrowth',       label:'Topluluk büyüme (×5 üye)', emoji:'📈', on:true  },
     { key:'onInactive',     label:'Pasif üye uyarısı',        emoji:'💤', on:false },
+    { key:'onStreakBroken',  label:'Seri kırıldığında (5+)',  emoji:'💔', on:false },
   ]},
   { group: '📋 Diğer', keys: [
     { key:'onIssue',    label:'Olumsuzluk eklendiğinde',      emoji:'⚠️', on:false },
@@ -3897,6 +3911,7 @@ const TOGGLE_GROUPS = [
     { key:'onWeekly',   label:'Haftalık özet (Pazartesi)',     emoji:'📊', on:true  },
     { key:'onMonthly',  label:'Aylık rapor — ayın 1i',        emoji:'📈', on:true  },
     { key:'onAnniv',    label:'Topluluk yıldönümü',           emoji:'🎂', on:true  },
+    { key:'onAnnouncement',label:'Duyuru yayınlandığında',    emoji:'📢', on:true  },
   ]},
 ];
 const DEFAULT_TOGGLES = Object.fromEntries(
@@ -4047,6 +4062,11 @@ function renderWebhookLog(){
     </div>`).join('');
 }
 function clearWebhookLog(){ _webhookLog=[]; renderWebhookLog(); }
+function resetWebhookDailyLimits(){
+  const keys=['inactive','noevent','anniv','reminder','weekly','monthly'];
+  try{ keys.forEach(k=>localStorage.removeItem('ls_wh_sent_'+k)); }catch(e){}
+  notify('🔄','Günlük kilitler sıfırlandı','Periyodik bildirimler tekrar çalışabilir.','#fbbf24');
+}
 
 async function sendWebhook(payload, logTitle){
   const url = getWebhookUrl();
@@ -4183,20 +4203,55 @@ function webhookCompleteEvent(ev){
 }
 
 // ── Etkinlik düzenlendi ──────────────────────────────────────────────────────
-function webhookEditEvent(ev, oldDate){
+function webhookEditEvent(ev, old){
   if(!webhookOn('onEdit')) return;
-  const dateChanged = oldDate && oldDate !== ev.date;
+  // old: eski snapshot objesi (name, date, time, type, dur, score, status, managers, participants)
+  const changes = [];
+  const STATUS_LABELS = {planned:'📋 Planlandı', done:'✅ Tamamlandı', cancelled:'❌ İptal'};
+  if(old){
+    if(old.name && old.name !== ev.name)
+      changes.push({name:'📌 İsim', value:`~~${old.name}~~ → **${ev.name}**`, inline:false});
+    if(old.date !== ev.date || old.time !== ev.time){
+      const oldTs = old.date ? _evDiscordTs(old.date, old.time) : '—';
+      changes.push({name:'📅 Tarih & Saat', value:`~~${_fmtDate(old.date)||'—'} ${old.time||''}~~ → ${_evDiscordTs(ev.date, ev.time)}`, inline:false});
+    } else {
+      changes.push({name:'📅 Tarih & Saat', value: _evDiscordTs(ev.date, ev.time), inline:true});
+    }
+    if(old.status !== ev.status)
+      changes.push({name:'🔄 Durum', value:`~~${STATUS_LABELS[old.status]||old.status}~~ → **${STATUS_LABELS[ev.status]||ev.status}**`, inline:false});
+    if(old.type !== ev.type)
+      changes.push({name:'🎭 Tür', value:`~~${old.type||'—'}~~ → **${ev.type||'—'}**`, inline:true});
+    if(old.score !== ev.score && (old.score||ev.score))
+      changes.push({name:'⭐ Puan', value:`~~${old.score||'—'}/10~~ → **${ev.score||'—'}/10**`, inline:true});
+    if(old.dur !== ev.dur && (old.dur||ev.dur))
+      changes.push({name:'⏱️ Süre', value:`~~${old.dur||'—'}~~ → **${ev.dur||'—'}**`, inline:true});
+    const oldPc = (old.participants||[]).length;
+    const newPc = (ev.participants||[]).length;
+    if(oldPc !== newPc)
+      changes.push({name:'👥 Katılımcı', value:`~~${oldPc} kişi~~ → **${newPc} kişi**`, inline:true});
+    if(old.managers !== ev.managers)
+      changes.push({name:'🎤 Yönetici', value:`~~${old.managers||'—'}~~ → ${_managerMention(ev.managers)}`, inline:false});
+  } else {
+    // Eski snapshot yoksa sadece güncel bilgileri göster
+    changes.push({name:'📅 Tarih & Saat', value: _evDiscordTs(ev.date, ev.time), inline:true});
+    changes.push({name:'🎭 Tür', value: ev.type||'—', inline:true});
+    if(ev.managers) changes.push({name:'🎤 Yönetici', value: _managerMention(ev.managers), inline:false});
+  }
+
+  // Hiçbir şey değişmediyse gönderme
+  const meaningfulChange = !old || (
+    old.name!==ev.name || old.date!==ev.date || old.time!==ev.time ||
+    old.type!==ev.type || old.score!==ev.score || old.dur!==ev.dur ||
+    old.status!==ev.status || old.managers!==ev.managers ||
+    (old.participants||[]).length!==(ev.participants||[]).length
+  );
+  if(!meaningfulChange) return;
+
   sendWebhook({ embeds:[{
     title: '✏️  Etkinlik Güncellendi',
     color: 0xFBBF24,
     description: `**${ev.name}** etkinliğinde değişiklik yapıldı.`,
-    fields:[
-      {name:'📅 Tarih & Saat', value: dateChanged
-        ? `~~${_fmtDate(oldDate)}~~ → ${_evDiscordTs(ev.date, ev.time)}`
-        : _evDiscordTs(ev.date, ev.time), inline:true},
-      {name:'🎭 Tür',     value: ev.type||'—',        inline:true},
-      ...(ev.managers?[{name:'🎤 Yönetici', value: _managerMention(ev.managers), inline:false}]:[]),
-    ],
+    fields: changes,
     footer:{ text:'Lumina Solarias · Etkinlik Sistemi' },
     timestamp: new Date().toISOString()
   }]}, `✏️ ${ev.name} güncellendi`);
@@ -4259,15 +4314,17 @@ async function testWebhook(){
 }
 
 // ── 24 saat hatırlatma ────────────────────────────────────────────────────────
-let _reminderSent = false;
 function checkUpcomingReminder(){
-  if(_reminderSent || !webhookOn('onReminder')) return;
+  if(!webhookOn('onReminder')) return;
+  if(_whAlreadySent('reminder','day')) return;
   const url = getWebhookUrl(); if(!url) return;
   const events = load('events');
   const now = new Date();
   const tomorrow = new Date(now.getTime() + 24*60*60*1000).toISOString().split('T')[0];
-  events.filter(e=>e.status==='planned' && e.date===tomorrow).forEach(ev=>{
-    _reminderSent = true;
+  const upcoming = events.filter(e=>e.status==='planned' && e.date===tomorrow);
+  if(!upcoming.length) return;
+  _whMarkSent('reminder','day');
+  upcoming.forEach(ev=>{
     sendWebhook({
       embeds:[{
       title: '⏰  Yarın Etkinlik Var!',
@@ -4284,9 +4341,9 @@ function checkUpcomingReminder(){
 }
 
 // ── Aylık rapor ───────────────────────────────────────────────────────────────
-let _monthlySent = false;
 function checkMonthlySummary(){
-  if(_monthlySent || !webhookOn('onMonthly')) return;
+  if(!webhookOn('onMonthly')) return;
+  if(_whAlreadySent('monthly','month')) return;
   const url = getWebhookUrl(); if(!url) return;
   const today = new Date();
   if(today.getDate()!==1) return;
@@ -4295,7 +4352,7 @@ function checkMonthlySummary(){
   const fmt = d => d.toISOString().split('T')[0];
   const events = load('events').filter(e=>e.status==='done'&&e.date>=fmt(lastMonth)&&e.date<=fmt(lastMonthEnd));
   if(!events.length) return;
-  _monthlySent = true;
+  _whMarkSent('monthly','month');
   const total = events.reduce((a,e)=>a+(e.participants||[]).length,0);
   const avg   = (total/events.length).toFixed(1);
   const topEv = [...events].sort((a,b)=>parseFloat(b.score||0)-parseFloat(a.score||0))[0];
@@ -4322,9 +4379,9 @@ function checkMonthlySummary(){
 }
 
 // ── Haftalık özet ─────────────────────────────────────────────────────────────
-let _weeklySent = false;
 function checkWeeklySummary(){
-  if(_weeklySent || !webhookOn('onWeekly')) return;
+  if(!webhookOn('onWeekly')) return;
+  if(_whAlreadySent('weekly','week')) return;
   const url = getWebhookUrl(); if(!url) return;
   const now = new Date();
   if(now.getDay()!==1) return;
@@ -4333,7 +4390,7 @@ function checkWeeklySummary(){
   const fmt = d => d.toISOString().split('T')[0];
   const events = load('events').filter(e=>e.status==='done'&&e.date>=fmt(lastWeekStart)&&e.date<=fmt(lastWeekEnd));
   if(!events.length) return;
-  _weeklySent = true;
+  _whMarkSent('weekly','week');
   const total = events.reduce((a,e)=>a+(e.participants||[]).length,0);
   const avg   = (total/events.length).toFixed(1);
   const topEv = [...events].sort((a,b)=>parseFloat(b.score||0)-parseFloat(a.score||0))[0];
@@ -4520,8 +4577,102 @@ function webhookGrowth(total){
     timestamp:new Date().toISOString()
   }]}, `📈 ${total} üye`);
 }
+
+// ── Duyuru yayınlandı ─────────────────────────────────────────────────────────
+function webhookAnnouncement(title, bodyHtml, pinned){
+  if(!webhookOn('onAnnouncement')) return;
+  const plainBody = bodyHtml.replace(/<[^>]+>/g,'').slice(0,300)+(bodyHtml.replace(/<[^>]+>/g,'').length>300?'…':'');
+  sendWebhook({embeds:[{
+    title:`📢  ${pinned?'📌 Sabitlendi: ':''}Yeni Duyuru`,
+    color:0x7C3AED,
+    description:`**${title}**\n\n${plainBody}`,
+    footer:{ text:'Lumina Solarias · Duyuru Sistemi' },
+    timestamp:new Date().toISOString()
+  }]}, `📢 Duyuru: ${title}`);
+}
+
+// ── Seri kırıldı ──────────────────────────────────────────────────────────────
+function webhookStreakBroken(nick, memberId, oldStreak){
+  if(!webhookOn('onStreakBroken')) return;
+  if(oldStreak < 5) return; // sadece dikkat çekici seriler için
+  const mention=(memberId&&/^\d{15,20}$/.test(memberId))?`<@${memberId}>`:`**${nick}**`;
+  sendWebhook({embeds:[{
+    title:'💔  Seri Kırıldı!',
+    color:0xF87171,
+    description:`${mention} adlı üyenin **${oldStreak} etkinlik serisi** sona erdi.`,
+    footer:{ text:'Lumina Solarias · Seri Takibi' },
+    timestamp:new Date().toISOString()
+  }]}, `💔 ${nick} — ${oldStreak} seri kırıldı`);
+}
+
+// ── Haftalık plan paylaşımı ───────────────────────────────────────────────────
+function webhookWeeklyPlan(){
+  if(!webhookOn('onWeeklyPlan')) return;
+  const events=load('events').filter(e=>e.status==='planned');
+  if(!events.length) return;
+  const now=new Date();
+  const weekStart=new Date(now); weekStart.setDate(now.getDate()-now.getDay()+1);
+  const weekEnd=new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+  const fmt=d=>d.toISOString().split('T')[0];
+  const thisWeek=events.filter(e=>e.date>=fmt(weekStart)&&e.date<=fmt(weekEnd));
+  const upcoming=thisWeek.length?thisWeek:events.sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
+  const lines=upcoming.map(e=>`${_evDiscordTs(e.date,e.time)} — **${e.name}**${e.managers?' ('+e.managers+')':''}`).join('\n');
+  sendWebhook({embeds:[{
+    title:'📆  Haftalık Etkinlik Planı',
+    color:0xC4B5FD,
+    description:`Bu haftanın etkinlikleri hazır! Takvimini ayarla 📅`,
+    fields:[{name:`🎮 ${upcoming.length} Etkinlik Planlandı`, value:lines||'—', inline:false}],
+    footer:{ text:'Lumina Solarias · Haftalık Plan' },
+    timestamp:new Date().toISOString()
+  }]}, `📆 Haftalık plan — ${upcoming.length} etkinlik`);
+  notify('📆','Plan paylaşıldı!',`${upcoming.length} etkinlik Discord'a gönderildi.`,'#c4b5fd');
+}
+// ── Tekrar gönderim koruması ─────────────────────────────────────────────────
+// Her periyodik bildirim için "bugün zaten gönderildi mi?" kontrolü.
+// key: benzersiz bildirim kodu, period: 'day' | 'week' | 'month'
+function _whAlreadySent(key, period){
+  try {
+    const stored = localStorage.getItem('ls_wh_sent_' + key);
+    if(!stored) return false;
+    const now = new Date();
+    if(period === 'day'){
+      // Aynı takvim günü
+      return stored === now.toISOString().split('T')[0];
+    } else if(period === 'week'){
+      // Aynı ISO hafta (yıl + hafta numarası)
+      const isoWeek = d => {
+        const t = new Date(d); t.setHours(0,0,0,0); t.setDate(t.getDate()+3-(t.getDay()+6)%7);
+        const w = new Date(t.getFullYear(),0,4);
+        return t.getFullYear()+'W'+String(1+Math.round(((t-w)/86400000-3+(w.getDay()+6)%7)/7)).padStart(2,'0');
+      };
+      return stored === isoWeek(now);
+    } else if(period === 'month'){
+      // Aynı yıl-ay
+      return stored === now.getFullYear()+'-'+(now.getMonth()+1);
+    }
+    return false;
+  } catch(e){ return false; }
+}
+function _whMarkSent(key, period){
+  try {
+    const now = new Date();
+    let val;
+    if(period === 'day'){
+      val = now.toISOString().split('T')[0];
+    } else if(period === 'week'){
+      const t = new Date(now); t.setHours(0,0,0,0); t.setDate(t.getDate()+3-(t.getDay()+6)%7);
+      const w = new Date(t.getFullYear(),0,4);
+      val = t.getFullYear()+'W'+String(1+Math.round(((t-w)/86400000-3+(w.getDay()+6)%7)/7)).padStart(2,'0');
+    } else if(period === 'month'){
+      val = now.getFullYear()+'-'+(now.getMonth()+1);
+    }
+    localStorage.setItem('ls_wh_sent_' + key, val);
+  } catch(e){}
+}
+
 function checkInactive(){
   if(!webhookOn('onInactive')) return;
+  if(_whAlreadySent('inactive','day')) return;
   const url=getWebhookUrl(); if(!url) return;
   const events=load('events').filter(e=>e.status==='done');
   const last3=events.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,3);
@@ -4529,6 +4680,7 @@ function checkInactive(){
   const members=load('members').filter(m=>!m.archived);
   const inactive=members.filter(m=>!last3.some(e=>(e.participants||[]).includes(m.id)));
   if(!inactive.length) return;
+  _whMarkSent('inactive','day');
   // Embed içinde mention listesi oluştur
   const mentionList=inactive.slice(0,10).map(m=>(m.id&&/^\d{15,20}$/.test(m.id))?`<@${m.id}>`:`**${m.nick}**`).join('\n')+(inactive.length>10?`\n+${inactive.length-10} kişi daha`:'');
   sendWebhook({embeds:[{
@@ -4542,12 +4694,14 @@ function checkInactive(){
 }
 function checkNoEvent(){
   if(!webhookOn('onNoEvent')) return;
+  if(_whAlreadySent('noevent','day')) return;
   const url=getWebhookUrl(); if(!url) return;
   const events=load('events').filter(e=>e.status==='done');
   if(!events.length) return;
   const last=events.sort((a,b)=>b.date.localeCompare(a.date))[0];
   const diff=Math.floor((new Date()-new Date(last.date))/(1000*60*60*24));
   if(diff>=10){
+    _whMarkSent('noevent','day');
     sendWebhook({embeds:[{
       title:'⚠️  Etkinliksiz Geçen Süre',
       color:0xFBBF24,
@@ -4560,6 +4714,7 @@ function checkNoEvent(){
 }
 function checkAnniversary(){
   if(!webhookOn('onAnniv')) return;
+  if(_whAlreadySent('anniv','day')) return;
   const url=getWebhookUrl(); if(!url) return;
   const events=load('events').filter(e=>e.status==='done');
   if(!events.length) return;
@@ -4569,6 +4724,7 @@ function checkAnniversary(){
   if(firstDate.getMonth()===today.getMonth()&&firstDate.getDate()===today.getDate()&&firstDate.getFullYear()<today.getFullYear()){
     const years=today.getFullYear()-firstDate.getFullYear();
     const mCount=load('members').filter(m=>!m.archived).length;
+    _whMarkSent('anniv','day');
     sendWebhook({embeds:[{
       title:`🎂  ${years}. Yıldönümü!`,
       color:0xC4B5FD,
@@ -4832,6 +4988,12 @@ function applyRoleRestrictions(){
       nav.onclick = (e)=>{e.stopPropagation();showNotif('🔒','Erişim Kısıtlı','Bu seksiyon için yetkiniz yok.',3000);};
     }
   });
+  // Haftalık plan paylaş butonu: sadece admin/solarias ve webhook aktifken
+  const shareBtn = document.getElementById('wk-share-btn');
+  if(shareBtn){
+    const isPriv = currentRole==='admin'||currentRole==='solarias';
+    shareBtn.style.display = isPriv ? '' : 'none';
+  }
 
   // Ayarlar sekmesi sadece admin
   const settingsTab = document.getElementById('tab-settings');
