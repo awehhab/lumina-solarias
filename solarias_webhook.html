@@ -35,7 +35,7 @@
 
   // Load all data from Firebase into memory cache, then boot the app
   const KEYS = {members:'ls3_members', events:'ls3_events', games:'ls3_games', issues:'ls3_issues', solarias:'ls3_solarias', announcements:'ls3_announcements'};
-  window._fbCache = {members:null, events:null, games:null, issues:null, solarias:null, announcements:null};
+  window._fbCache = {members:null, events:null, games:null, issues:null, solarias:null, announcements:null, _webhookPlanUrl:null};
 
   async function loadAllFromFirebase() {
     // GÜVENLIK: Önce sadece şifreleri yükle, auth onaylanmadan uygulama başlamaz
@@ -329,7 +329,7 @@ select option{background:var(--bg2);}
 .theme-btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 14px;margin:10px 10px 12px;border-radius:var(--rs);border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;transition:all .15s;width:calc(100% - 20px);}
 .theme-btn:hover{background:var(--card2);color:var(--text);border-color:var(--border2);}
 .theme-btn-dot{width:12px;height:12px;border-radius:50%;background:var(--p400);flex-shrink:0;}
-.theme-popup{display:none;position:absolute;bottom:calc(100% + 6px);left:10px;right:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;z-index:500;box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:60vh;overflow-y:auto;}
+.theme-popup{display:none;position:absolute;bottom:calc(100% + 6px);left:10px;right:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;z-index:560;box-shadow:0 8px 32px rgba(0,0,0,0.5);max-height:60vh;overflow-y:auto;}
 .theme-popup.open{display:block;}
 .theme-popup-wrap{position:relative;}
 .theme-presets{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;}
@@ -406,7 +406,7 @@ select option{background:var(--bg2);}
 .login-btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;}
 .login-btn:hover{border-color:var(--p400);color:var(--text);background:rgba(var(--p-r),var(--p-g),var(--p-b),0.07);}
 .login-panel-wrap{position:static;}
-.login-panel{display:none;position:fixed;top:auto;left:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:18px;width:calc(var(--sidebar-w) - 20px);max-width:300px;z-index:700;box-shadow:0 12px 40px rgba(0,0,0,0.6);}
+.login-panel{display:none;position:fixed;top:auto;left:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:18px;width:calc(var(--sidebar-w) - 20px);max-width:300px;z-index:800;box-shadow:0 12px 40px rgba(0,0,0,0.6);}
 .login-panel.open{display:block;}
 .login-panel-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text);}
 .login-role-row{display:flex;gap:8px;margin-bottom:12px;}
@@ -1033,6 +1033,31 @@ body.viewer-mode .member-action-col { display: none !important; }
         <strong style="color:var(--text2);display:block;margin-bottom:4px;">Nasıl alınır?</strong>
         Discord → İlgili kanal → Kanal Ayarları → Entegrasyonlar → Webhook Oluştur → URL Kopyala
       </div>
+    </div>
+  </div>
+
+  <!-- Kesinleşmiş Etkinlikler Webhook Card -->
+  <div class="sec" style="max-width:720px;margin-top:0;">
+    <div class="sec-h">
+      <div class="sec-t">📅 Kesinleşmiş Etkinlikler Webhook</div>
+      <span id="wh-plan-badge" style="display:none;font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(124,58,237,0.15);color:var(--p200);border:1px solid rgba(124,58,237,0.3);">Aktif</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="font-size:12.5px;color:var(--text2);line-height:1.7;">
+        Yeni etkinlik planlandığında ve haftalık plan paylaşıldığında bildirimler bu webhook'a gönderilir.<br>
+        <span style="color:var(--text3);">Boş bırakılırsa yukarıdaki ana webhook kullanılır.</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:stretch;">
+        <div style="position:relative;flex:1;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;">📅</span>
+          <input id="webhook-plan-url-input" type="url" placeholder="https://discord.com/api/webhooks/... (kesinleşmiş-etkinlikler kanalı)"
+            style="width:100%;box-sizing:border-box;background:var(--card2);border:1.5px solid var(--border2);border-radius:var(--rs);padding:10px 12px 10px 36px;color:var(--text);font-size:13px;outline:none;transition:border .2s;"
+            oninput="webhookPlanUrlChanged(this.value)" onfocus="this.style.borderColor='var(--p400)'" onblur="this.style.borderColor='var(--border2)'">
+        </div>
+        <button class="btn btn-p" onclick="saveWebhookPlanUrl()" style="white-space:nowrap;">Kaydet</button>
+        <button class="btn btn-g" onclick="testWebhookPlan()" style="white-space:nowrap;" title="Test bildirimi gönder">🔔</button>
+      </div>
+      <div id="webhook-plan-status" style="font-size:12px;color:var(--text3);min-height:16px;"></div>
     </div>
   </div>
 
@@ -3921,6 +3946,9 @@ const DEFAULT_TOGGLES = Object.fromEntries(
 function getWebhookUrl(){
   return (window._fbCache && window._fbCache._webhookUrl) || '';
 }
+function getWebhookPlanUrl(){
+  return (window._fbCache && window._fbCache._webhookPlanUrl) || '';
+}
 function getWebhookToggles(){
   const cached = window._fbCache && window._fbCache._webhookToggles;
   if(cached) return {...DEFAULT_TOGGLES, ...Object.fromEntries(Object.entries(DEFAULT_TOGGLES).map(([k,v])=>([k,{...v, on: cached[k]!==undefined ? cached[k] : v.on}])))};
@@ -3939,6 +3967,51 @@ function webhookUrlChanged(v){
     st.textContent=`⚠ Discord webhook URL'si https://discord.com/api/webhooks/ ile başlamalı`;
     st.style.color='var(--amber)';
   }
+}
+
+function webhookPlanUrlChanged(v){
+  const st = document.getElementById('webhook-plan-status');
+  if(!st) return;
+  if(!v){ st.textContent='Boş bırakılırsa ana webhook kullanılır.'; st.style.color='var(--text3)'; return; }
+  if(v.startsWith('https://discord.com/api/webhooks/')){
+    st.textContent='✓ Geçerli Discord webhook URL formatı';
+    st.style.color='var(--green)';
+  } else {
+    st.textContent=`⚠ Discord webhook URL'si https://discord.com/api/webhooks/ ile başlamalı`;
+    st.style.color='var(--amber)';
+  }
+  const badge = document.getElementById('wh-plan-badge');
+  if(badge) badge.style.display = v.startsWith('https://discord.com/api/webhooks/') ? 'inline-flex' : 'none';
+}
+
+function saveWebhookPlanUrl(){
+  if(!guardWrite())return;
+  const url = document.getElementById('webhook-plan-url-input').value.trim();
+  if(url && !url.startsWith('https://discord.com/api/webhooks/')){
+    return alert(`Geçersiz webhook URL! https://discord.com/api/webhooks/ ile başlamalı.`);
+  }
+  if(window._fbCache) window._fbCache._webhookPlanUrl = url;
+  if(window._fbSet && window._fbRef && window._fbDb){
+    window._fbSet(window._fbRef(window._fbDb,'ls_webhook_plan_url'), url).catch(()=>{});
+  }
+  notify('📅','Kesinleşmiş Etkinlikler webhook kaydedildi', url ? 'Plan bildirimleri bu kanala gönderilecek.' : 'Kaldırıldı, ana webhook kullanılacak.','#c4b5fd');
+  const badge = document.getElementById('wh-plan-badge');
+  if(badge) badge.style.display = url ? 'inline-flex' : 'none';
+}
+
+function testWebhookPlan(){
+  const url = getWebhookPlanUrl() || getWebhookUrl();
+  if(!url){ alert('Önce bir webhook URL kaydedilmeli.'); return; }
+  sendWebhook({
+    embeds:[{
+      title:'🔔 Test Bildirimi — Kesinleşmiş Etkinlikler',
+      color:0x7C3AED,
+      description:'Bu kanalın etkinlik planı webhook bağlantısı başarıyla çalışıyor!',
+      footer:{ text:'Lumina Solarias · Test' },
+      timestamp:new Date().toISOString()
+    }]
+  }, 'Test — kesinleşmiş etkinlikler', url);
+  notify('🔔','Test gönderildi','Kesinleşmiş Etkinlikler webhook test bildirimi iletildi.','#c4b5fd');
 }
 
 function saveWebhookUrl(){
@@ -3960,6 +4033,14 @@ function renderWebhookSettings(){
   const inp = document.getElementById('webhook-url-input');
   if(inp) inp.value = url;
   webhookUrlChanged(url);
+
+  const planUrl = getWebhookPlanUrl();
+  const planInp = document.getElementById('webhook-plan-url-input');
+  if(planInp) planInp.value = planUrl;
+  webhookPlanUrlChanged(planUrl);
+  const badge = document.getElementById('wh-plan-badge');
+  if(badge) badge.style.display = planUrl ? 'inline-flex' : 'none';
+
   renderWebhookToggles();
   renderWebhookLog();
   const banner = document.getElementById('wh-banner');
@@ -4068,8 +4149,8 @@ function resetWebhookDailyLimits(){
   notify('🔄','Günlük kilitler sıfırlandı','Periyodik bildirimler tekrar çalışabilir.','#fbbf24');
 }
 
-async function sendWebhook(payload, logTitle){
-  const url = getWebhookUrl();
+async function sendWebhook(payload, logTitle, targetUrl){
+  const url = targetUrl || getWebhookUrl();
   if(!url) return;
   // Embed içindeki ve content'teki tüm <@ID>'leri tara → allowed_mentions.users'a ekle
   // Bu olmadan Discord mention'ları ping atmaz
@@ -4089,6 +4170,13 @@ async function sendWebhook(payload, logTitle){
     addWebhookLog(logTitle||'Bildirim', false);
     console.warn('Webhook gönderilemedi:', e);
   }
+}
+
+// Kesinleşmiş Etkinlikler kanalı için özel gönderim
+async function sendPlanWebhook(payload, logTitle){
+  const planUrl = getWebhookPlanUrl();
+  // Plan webhook'u tanımlıysa oraya gönder, yoksa ana webhook'a düş
+  await sendWebhook(payload, logTitle, planUrl || getWebhookUrl());
 }
 
 // ── Yardımcılar ──────────────────────────────────────────────────────────────
@@ -4151,7 +4239,7 @@ function _evDiscordTsDate(date){
 // ── Etkinlik planlandı ───────────────────────────────────────────────────────
 function webhookPlanEvent(ev){
   if(!webhookOn('onPlan')) return;
-  sendWebhook({
+  sendPlanWebhook({
     embeds:[{
     title: '📅  Yeni Etkinlik Planlandı',
     color: 0x7C3AED,
@@ -4617,8 +4705,7 @@ function webhookWeeklyPlan(){
   const thisWeek=events.filter(e=>e.date>=fmt(weekStart)&&e.date<=fmt(weekEnd));
   const upcoming=thisWeek.length?thisWeek:events.sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5);
   const lines=upcoming.map(e=>`${_evDiscordTs(e.date,e.time)} — **${e.name}**${e.managers?' ('+e.managers+')':''}`).join('\n');
-  sendWebhook({embeds:[{
-    title:'📆  Haftalık Etkinlik Planı',
+  sendPlanWebhook({embeds:[{
     color:0xC4B5FD,
     description:`Bu haftanın etkinlikleri hazır! Takvimini ayarla 📅`,
     fields:[{name:`🎮 ${upcoming.length} Etkinlik Planlandı`, value:lines||'—', inline:false}],
@@ -4821,9 +4908,11 @@ window._bootApp = async function(){
       window._fbGet(window._fbRef(window._fbDb,'ls_sol_notes')),
       window._fbGet(window._fbRef(window._fbDb,'ls_ev_gallery')),
       window._fbGet(window._fbRef(window._fbDb,'ls_ev_quotes')),
-    ]).then(([urlSnap,togSnap,reactSnap,solNotesSnap,gallerySnap,quotesSnap])=>{
+      window._fbGet(window._fbRef(window._fbDb,'ls_webhook_plan_url')),
+    ]).then(([urlSnap,togSnap,reactSnap,solNotesSnap,gallerySnap,quotesSnap,planUrlSnap])=>{
       if(urlSnap.exists() && window._fbCache) window._fbCache._webhookUrl = urlSnap.val();
       if(togSnap.exists() && window._fbCache) window._fbCache._webhookToggles = togSnap.val();
+      if(planUrlSnap.exists() && window._fbCache) window._fbCache._webhookPlanUrl = planUrlSnap.val();
       if(reactSnap.exists() && window._fbCache) window._fbCache._annReactions = reactSnap.val();
       if(solNotesSnap.exists()){ try{ localStorage.setItem('ls_sol_notes', JSON.stringify(solNotesSnap.val())); }catch(e){} }
       if(gallerySnap.exists() && window._fbCache) window._fbCache._evGallery = gallerySnap.val();
@@ -4837,6 +4926,20 @@ window._bootApp = async function(){
         checkMonthlySummary();
       }
     }).catch(()=>{});
+
+    // Tepkiler için realtime listener — bir kullanıcı tepki verince herkeste anında güncelle
+    if(window._fbOnValue && !window._reactListenerActive){
+      window._reactListenerActive = true;
+      window._fbOnValue(window._fbRef(window._fbDb,'ls_ann_reactions'), snap=>{
+        const val = snap.exists() ? snap.val() : {};
+        if(window._fbCache) window._fbCache._annReactions = val;
+        // Görünür duyuru tepki satırlarını güncelle
+        document.querySelectorAll('[id^="ann-react-"]').forEach(el=>{
+          const annId = el.id.replace('ann-react-','');
+          el.innerHTML = buildReactionsHTML(annId);
+        });
+      });
+    }
   }
 };
 
@@ -4882,7 +4985,19 @@ function openLoginPanel(){
   const isOpen = panel.classList.contains('open');
   if(!isOpen && btn){
     const rect = btn.getBoundingClientRect();
-    panel.style.top = (rect.bottom + 6) + 'px';
+    const panelH = 280; // estimated panel height
+    const spaceBelow = window.innerHeight - rect.bottom - 6;
+    if(spaceBelow >= panelH){
+      panel.style.top = (rect.bottom + 6) + 'px';
+      panel.style.bottom = 'auto';
+    } else {
+      // Not enough space below — anchor from bottom of viewport
+      panel.style.bottom = (window.innerHeight - rect.top + 6) + 'px';
+      panel.style.top = 'auto';
+    }
+    // Keep within left edge of viewport
+    const leftPos = Math.min(rect.left, window.innerWidth - 310);
+    panel.style.left = Math.max(8, leftPos) + 'px';
   }
   panel.classList.toggle('open');
   if(!panel.classList.contains('open')) return;
@@ -4924,14 +5039,7 @@ function submitLoginPanel(){
   }
 }
 
-// Close login panel when clicking outside
-document.addEventListener('click', function(e){
-  const panel = document.getElementById('login-panel');
-  const wrap = document.getElementById('login-panel-wrap');
-  if(panel && panel.classList.contains('open') && wrap && !wrap.contains(e.target)){
-    panel.classList.remove('open');
-  }
-});
+// Close login panel when clicking outside — handled in unified click listener above
 
 function logoutAuth(){
   if(currentRole==='viewer') return; // already viewer, nothing to do
@@ -5466,11 +5574,21 @@ function setPreset(p){
 
 function toggleThemePopup(e){
   e.stopPropagation();
-  document.getElementById('theme-popup').classList.toggle('open');
+  const tp=document.getElementById('theme-popup');
+  tp.classList.toggle('open');
 }
 document.addEventListener('click',(e)=>{
   const tp=document.getElementById('theme-popup');
-  if(tp && !tp.contains(e.target)) tp.classList.remove('open');
+  const wrap=document.querySelector('.theme-popup-wrap');
+  if(tp && tp.classList.contains('open') && wrap && !wrap.contains(e.target)){
+    tp.classList.remove('open');
+  }
+  // Login panel dışına tıklanınca kapat (sidebar overlay tıklaması dahil)
+  const panel=document.getElementById('login-panel');
+  const loginWrap=document.getElementById('login-panel-wrap');
+  if(panel && panel.classList.contains('open') && loginWrap && !loginWrap.contains(e.target)){
+    panel.classList.remove('open');
+  }
 });
 
 function updateThemeDot(){
