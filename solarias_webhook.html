@@ -207,6 +207,7 @@ select option{background:var(--bg2);}
 .cal-ev{font-size:10px;background:rgba(196,181,253,0.12);color:var(--p200);padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .cal-ev.done{background:var(--green-bg);color:var(--green);}
 .cal-ev.cancelled{background:var(--red-bg);color:var(--red);}
+.cal-ev.kayitdisi{opacity:0.45;font-style:italic;background:rgba(251,191,36,0.08);color:var(--amber);}
 .countdown-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:18px;}
 .cd-card{background:var(--card2);border:1px solid var(--border2);border-radius:var(--r);padding:14px 16px;cursor:pointer;transition:border-color .2s;}
 .cd-card:hover{border-color:var(--p400);}
@@ -707,6 +708,16 @@ body.viewer-mode .member-action-col { display: none !important; }
   .ann-toolbar { gap: 3px; }
   .ann-tb-btn { padding: 4px 6px; font-size: 11px; }
 }
+
+/* ===== KAYIT DIŞI ===== */
+.kayitdisi-toggle{display:inline-flex;align-items:center;gap:7px;cursor:pointer;user-select:none;padding:5px 10px;border-radius:20px;border:1px solid var(--border2);background:transparent;font-size:12px;color:var(--text3);font-family:'DM Sans',sans-serif;transition:all .15s;}
+.kayitdisi-toggle:hover{border-color:var(--amber);color:var(--amber);}
+.kayitdisi-toggle.active{background:var(--amber-bg);border-color:rgba(251,191,36,0.4);color:var(--amber);}
+.kayitdisi-toggle .kd-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);transition:background .15s;flex-shrink:0;}
+.kayitdisi-toggle.active .kd-dot{background:var(--amber);}
+.ec.kayitdisi-ev{opacity:0.6;border-style:dashed;}
+.ec.kayitdisi-ev:hover{opacity:0.85;}
+.badge-kd{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,0.3);}
 </style>
 </head>
 <body>
@@ -1362,9 +1373,14 @@ body.viewer-mode .member-action-col { display: none !important; }
       <div class="fgrp"><label>Saat</label><input id="eva-time" type="time"></div>
       <div class="fgrp fgf"><label>Yöneticiler</label><div id="eva-mgr-wrap" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div></div>
     </div>
-    <div class="fa">
-      <button class="btn btn-g" onclick="closeModal('modal-ev-add')">İptal</button>
-      <button class="btn btn-p" onclick="saveEventPlan()">Planla</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;flex-wrap:wrap;gap:8px;">
+      <button class="kayitdisi-toggle" id="eva-kd-toggle" onclick="toggleKayitDisi('eva')">
+        <span class="kd-dot"></span>Kayıt Dışı
+      </button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-g" onclick="closeModal('modal-ev-add')">İptal</button>
+        <button class="btn btn-p" onclick="saveEventPlan()">Planla</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1384,7 +1400,12 @@ body.viewer-mode .member-action-col { display: none !important; }
     <!-- Complete form (shown when not done) -->
     <div id="evd-complete-form" style="display:none;">
       <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:16px;">
-        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text2);">Etkinliği Tamamla</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text2);">Etkinliği Tamamla</div>
+          <button class="kayitdisi-toggle" id="evc-kd-toggle" onclick="toggleKayitDisi('evc')">
+            <span class="kd-dot"></span>Kayıt Dışı
+          </button>
+        </div>
         <div class="fg">
           <div class="fgrp"><label>Süre</label><input id="evc-dur" placeholder="3 saat"></div>
           <div class="fgrp"><label>Değerlendirme (/10)</label><input id="evc-score" type="number" min="0" max="10" step="0.5" placeholder="8"></div>
@@ -1469,9 +1490,14 @@ body.viewer-mode .member-action-col { display: none !important; }
         </div>
       </div>
     </div>
-    <div class="fa">
-      <button class="btn btn-g" onclick="closeModal('modal-ev-edit')">İptal</button>
-      <button class="btn btn-p" onclick="saveEditEvent()">Kaydet</button>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;flex-wrap:wrap;gap:8px;">
+      <button class="kayitdisi-toggle" id="eve-kd-toggle" onclick="toggleKayitDisi('eve')">
+        <span class="kd-dot"></span>Kayıt Dışı
+      </button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-g" onclick="closeModal('modal-ev-edit')">İptal</button>
+        <button class="btn btn-p" onclick="saveEditEvent()">Kaydet</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1691,7 +1717,7 @@ function fmtDate(d){return fmtDateLong(d);}
 function monthShort(d){if(!d)return'';const p=d.split('-');return(TR_MONTHS[parseInt(p[1])-1]||'').slice(0,3);}
 
 function getMemberCount(id){
-  return load('events').filter(e=>e.status==='done'&&(e.participants||[]).includes(id)).length;
+  return load('events').filter(e=>e.status==='done'&&!e.kayitDisi&&(e.participants||[]).includes(id)).length;
 }
 function getRole(count){
   if(count>=50)return'Etkinlik Müdavimi';
@@ -1701,7 +1727,7 @@ function getRole(count){
 }
 function getStatus(id){
   const events=load('events');
-  const done=events.filter(e=>e.status==='done'&&(e.participants||[]).includes(id));
+  const done=events.filter(e=>e.status==='done'&&!e.kayitDisi&&(e.participants||[]).includes(id));
   if(!done.length)return'Pasif';
   const last=done.map(e=>e.date).sort().reverse()[0];
   const diff=(new Date()-new Date(last))/(1000*60*60*24);
@@ -1709,7 +1735,7 @@ function getStatus(id){
 }
 function getLastEvent(id){
   const events=load('events');
-  const done=events.filter(e=>e.status==='done'&&(e.participants||[]).includes(id));
+  const done=events.filter(e=>e.status==='done'&&!e.kayitDisi&&(e.participants||[]).includes(id));
   if(!done.length)return null;
   return done.sort((a,b)=>b.date.localeCompare(a.date))[0];
 }
@@ -1801,7 +1827,7 @@ function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();de
 function renderOverview(){
   const members=load('members');
   const events=load('events');
-  const done=events.filter(e=>e.status==='done');
+  const done=events.filter(e=>e.status==='done'&&!e.kayitDisi);
   document.getElementById('ov-total').textContent=members.length;
   const activeCount=members.filter(m=>getStatus(m.id)==='Aktif').length;
   document.getElementById('ov-active').textContent=activeCount;
@@ -1864,7 +1890,10 @@ function renderOverview(){
   document.getElementById('ov-recent').innerHTML=rec.map(e=>`
     <div class="ec" onclick="openEvDetailById('${e.date}_${e.name}')">
       <div class="ec-db"><div class="ec-dd">${e.date.split('-')[2]}</div><div class="ec-dm">${monthShort(e.date)}</div></div>
-      <div class="ec-info"><div class="ec-name">${e.name}</div><div class="ec-meta">${(e.participants||[]).length} katılımcı${e.managers?' · '+e.managers:''}</div></div>
+      <div class="ec-info">
+        <div class="ec-name">${e.name}${e.kayitDisi?' <span class="badge badge-kd" style="font-size:10px;vertical-align:middle;">⚡ Kayıt Dışı</span>':''}</div>
+        <div class="ec-meta">${(e.participants||[]).length} katılımcı${e.managers?' · '+e.managers:''}</div>
+      </div>
       ${!isViewerOv && e.score?`<div class="ec-score">${e.score}/10</div>`:''}
     </div>`).join('')||'<div class="empty">Henüz etkinlik yok.</div>';
 
@@ -1921,8 +1950,10 @@ function renderCountdown(targetId){
     const mins=Math.floor((diff%(1000*60*60))/(1000*60));
     let timeStr=days>0?`${days} gün ${hrs} saat`:`${hrs} saat ${mins} dakika`;
     const evIdx=events.indexOf(e);
-    return`<div class="cd-card" onclick="goToEventInCalendar(${evIdx},'${e.date}')" id="cd-${targetId}-${i}">
-      <div class="cd-name">${e.name}</div>
+    const kdStyle=e.kayitDisi?'opacity:0.5;border-color:rgba(251,191,36,0.3);':'';
+    const kdLabel=e.kayitDisi?'<span style="font-size:10px;color:var(--amber);margin-left:6px;">⚡ Kayıt Dışı</span>':'';
+    return`<div class="cd-card" onclick="goToEventInCalendar(${evIdx},'${e.date}')" id="cd-${targetId}-${i}" style="${kdStyle}">
+      <div class="cd-name">${e.name}${kdLabel}</div>
       <div class="cd-date">${fmtDateLong(e.date)}${e.time?' · '+e.time:''}</div>
       <div class="cd-time">${timeStr}</div>
     </div>`;
@@ -2162,11 +2193,12 @@ function openMemberDrawer(id){
   if(!m)return;
   const events=load('events');
   const myEvents=events.filter(e=>e.status==='done'&&(e.participants||[]).includes(id)).sort((a,b)=>b.date.localeCompare(a.date));
-  const count=myEvents.length;
+  const myEventsOfficial=myEvents.filter(e=>!e.kayitDisi);
+  const count=myEventsOfficial.length;
   const streak=getMemberStreak(id);
   const status=m.archived?'Arşiv':getStatus(id);
   const typeMap={};
-  myEvents.forEach(e=>{typeMap[e.type||'Diğer']=(typeMap[e.type||'Diğer']||0)+1;});
+  myEventsOfficial.forEach(e=>{typeMap[e.type||'Diğer']=(typeMap[e.type||'Diğer']||0)+1;});
   const topType=Object.entries(typeMap).sort((a,b)=>b[1]-a[1])[0];
 
   const archiveBanner=m.archived?`
@@ -2187,18 +2219,18 @@ function openMemberDrawer(id){
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-      <div class="sc"><div class="sl">Katılım</div><div class="sv" style="font-size:20px;">${count}</div></div>
+      <div class="sc"><div class="sl">Katılım</div><div class="sv" style="font-size:20px;">${count}</div>${myEvents.length>count?`<div class="ss2">+${myEvents.length-count} kayıt dışı</div>`:''}</div>
       <div class="sc"><div class="sl">Durum</div><div style="margin-top:6px;">${m.archived?'<span class="badge b-none">🗄 Arşiv</span>':status==='Aktif'?'<span class="badge b-act">● Aktif</span>':'<span class="badge b-pas">● Pasif</span>'}</div></div>
       <div class="sc"><div class="sl">Rol</div><div style="margin-top:6px;">${roleBadge(count)}</div></div>
       <div class="sc"><div class="sl">🔥 Seri</div><div style="margin-top:6px;">${streak>0?streakBadge(streak)+'<span style="font-size:11px;color:var(--text3);margin-left:4px;">ardışık</span>':'<span style="font-size:12px;color:var(--text3);">—</span>'}</div></div>
     </div>
     ${topType?`<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">En çok katıldığı tür: <strong style="color:var(--text2);">${topType[0]}</strong> (${topType[1]} etkinlik)</div>`:''}
     <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text2);">Etkinlik Geçmişi</div>
-    ${myEvents.slice(0,20).map(e=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--card2);border-radius:var(--rs);border:1px solid var(--border);margin-bottom:6px;">
+    ${myEvents.slice(0,25).map(e=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--card2);border-radius:var(--rs);border:1px solid ${e.kayitDisi?'rgba(251,191,36,0.2)':' var(--border)'};margin-bottom:6px;${e.kayitDisi?'opacity:0.65;':''}" >
         <div style="font-size:11px;color:var(--text3);min-width:78px;">${fmtDateShort(e.date)}</div>
-        <div style="font-size:13px;font-weight:500;flex:1;">${e.name}</div>
-        <span class="badge b-none" style="font-size:10px;">${e.type||''}</span>
+        <div style="font-size:13px;font-weight:500;flex:1;font-style:${e.kayitDisi?'italic':'normal'};">${e.name}</div>
+        ${e.kayitDisi?'<span class="badge badge-kd" style="font-size:10px;">⚡ Kayıt Dışı</span>':e.type?`<span class="badge b-none" style="font-size:10px;">${e.type}</span>`:''}
       </div>`).join('')}
     ${myEvents.length===0?'<div class="empty">Henüz etkinlik yok.</div>':''}
   `;
@@ -2213,7 +2245,7 @@ function closeDrawer(){
 // ==================== EVENTS ====================
 function renderEvents(){
   const events=load('events');
-  const done=events.filter(e=>e.status==='done');
+  const done=events.filter(e=>e.status==='done'&&!e.kayitDisi);
   const total=done.reduce((a,e)=>a+(e.participants||[]).length,0);
   const max=done.length?Math.max(...done.map(e=>(e.participants||[]).length)):0;
   const topEv=done.find(e=>(e.participants||[]).length===max);
@@ -2240,11 +2272,12 @@ function renderEvents(){
     const _issueKey=e.name+' — '+fmtDateShort(e.date);
     const issues=load('issues').filter(i=>i.event===_issueKey);
     const isViewer=currentRole==='viewer';
-    return`<div class="ec" onclick="openEvDetail(${idx})" style="cursor:pointer;">
+    return`<div class="ec${e.kayitDisi?' kayitdisi-ev':''}" onclick="openEvDetail(${idx})" style="cursor:pointer;">
       <div class="ec-db"><div class="ec-dd">${e.date.split('-')[2]}</div><div class="ec-dm">${monthShort(e.date)}</div></div>
       <div class="ec-info">
         <div class="ec-name">${e.name} <span style="font-size:10px;color:var(--text3);margin-left:4px;">${e.type||''}</span>
           ${e.status==='done'?'<span class="badge b-act" style="font-size:10px;margin-left:4px;">✓ Tamamlandı</span>':e.status==='cancelled'?'<span class="badge b-pas" style="font-size:10px;margin-left:4px;">✕ İptal</span>':'<span class="badge b-none" style="font-size:10px;margin-left:4px;">◷ Planlandı</span>'}
+          ${e.kayitDisi?'<span class="badge badge-kd" style="font-size:10px;margin-left:4px;">⚡ Kayıt Dışı</span>':''}
           ${!isViewer && issues.length?`<span class="badge" style="font-size:10px;margin-left:4px;background:var(--red-bg);color:var(--red);">⚠ Sorun</span>`:''}
         </div>
         <div class="ec-meta">${pc} katılımcı${e.managers?' · '+e.managers:''}${e.dur?' · '+e.dur:''}</div>
@@ -2271,6 +2304,10 @@ function openEvDetail(idx){
   const issues=load('issues').filter(i=>i.event===_evIssueKey);
 
   document.getElementById('evd-title').textContent=e.name;
+  // Başlığın yanına kayıt dışı badge ekle
+  if(e.kayitDisi){
+    document.getElementById('evd-title').innerHTML=e.name+' <span class="badge badge-kd" style="font-size:11px;vertical-align:middle;">⚡ Kayıt Dışı</span>';
+  }
 
   const parts=(e.participants||[]).map(id=>{const m=members.find(x=>x.id===id);return m?m.nick:id;});
 
@@ -2282,6 +2319,7 @@ function openEvDetail(idx){
     const quotes = (window._fbCache && window._fbCache._evQuotes && window._fbCache._evQuotes[evKey]) || [];
     body=`
       <div style="font-size:12px;color:var(--text3);margin-bottom:4px;">${fmtDateLong(e.date)}${e.time?' · '+e.time:''}</div>
+      ${e.kayitDisi?'<div style="background:var(--amber-bg);border:1px solid rgba(251,191,36,0.3);border-radius:var(--rs);padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--amber);">⚡ Bu etkinlik <strong>Kayıt Dışı</strong> olarak kaydedilmiştir.</div>':''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;margin-top:10px;">
         <div class="sc"><div class="sl">Katılımcı Sayısı</div><div class="sv">${parts.length}</div></div>
         ${!isViewer?`<div class="sc"><div class="sl">Değerlendirme</div><div class="sv">${e.score||'—'}</div></div>`:''}
@@ -2335,7 +2373,10 @@ function openEvDetail(idx){
   } else {
     body=`
       <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">${fmtDateLong(e.date)}${e.time?' · '+e.time:''}</div>
-      <div class="badge b-none" style="margin-bottom:12px;">${e.status==='planned'?'◷ Planlandı':'✕ İptal Edildi'}</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+        <div class="badge b-none">${e.status==='planned'?'◷ Planlandı':'✕ İptal Edildi'}</div>
+        ${e.kayitDisi?'<span class="badge badge-kd">⚡ Kayıt Dışı</span>':''}
+      </div>
       ${e.managers?`<div style="font-size:12px;color:var(--text2);margin-top:8px;">Yöneticiler: ${e.managers}</div>`:''}
     `;
     // Show complete form for planned events
@@ -2352,6 +2393,8 @@ function openEvDetail(idx){
       ).join('');
       renderEvcPicker();
       updateSelectedTags('evc-selected-tags',evcSelectedMembers,'evc');
+      const _evcKd=document.getElementById('evc-kd-toggle');
+      if(_evcKd){e.kayitDisi?_evcKd.classList.add('active'):_evcKd.classList.remove('active');}
     } else {
       document.getElementById('evd-complete-form').style.display='none';
     }
@@ -2417,6 +2460,7 @@ function openAddEventFlow(prefillDate){
   document.getElementById('eva-time').value='21:00';
   document.getElementById('eva-custom-wrap').style.display='none';
   document.getElementById('eva-custom').value='';
+  const _kdT=document.getElementById('eva-kd-toggle');if(_kdT)_kdT.classList.remove('active');
   openModal('modal-ev-add');
 }
 
@@ -2433,9 +2477,11 @@ function saveEventPlan(){
   if(!name||!date)return alert('Etkinlik adı ve tarih zorunlu!');
   const mgrs=[...document.querySelectorAll('#eva-mgr-wrap input:checked')].map(cb=>cb.value);
   const events=load('events');
-  const ev={name,date,time:document.getElementById('eva-time').value,type:'Oyun',status:'planned',participants:[],dur:'',managers:mgrs.join(', '),score:''};
+  const kayitDisi=document.getElementById('eva-kd-toggle').classList.contains('active');
+  const ev={name,date,time:document.getElementById('eva-time').value,type:'Oyun',status:'planned',participants:[],dur:'',managers:mgrs.join(', '),score:'',kayitDisi};
   events.push(ev);
   save('events',events);
+  document.getElementById('eva-kd-toggle').classList.remove('active');
   closeModal('modal-ev-add');
   notify('📅','Etkinlik planlandı!',`${name} — ${fmtDateLong(date)}`,'#c4b5fd');
   webhookPlanEvent(ev);
@@ -2493,6 +2539,7 @@ function completeEvent(){
   e.score=document.getElementById('evc-score').value;
   e.managers=mgrs.join(', ');
   e.participants=evcSelectedMembers;
+  e.kayitDisi=document.getElementById('evc-kd-toggle').classList.contains('active');
   save('events',events);
 
   // Auto-add issue if filled
@@ -2503,34 +2550,35 @@ function completeEvent(){
   }
 
   // Role change notifications + webhook
-  // Streak kırılma kontrolü: bu etkinliğe katılmayan ama önceden serisi olan üyeler
-  const allActiveMembers=load('members').filter(m=>!m.archived);
-  allActiveMembers.forEach(m=>{
-    if(!evcSelectedMembers.includes(m.id)){
-      // Bu üye katılmadı — önceki streak'i hesapla (bu etkinlik HENÜ kaydedilmedi, yani mevcut streak geçerli)
-      const prevStreak=getMemberStreak(m.id);
-      if(prevStreak>=5) webhookStreakBroken(m.nick, m.id, prevStreak);
-    }
-  });
-  evcSelectedMembers.forEach(id=>{
-    const m=members.find(x=>x.id===id);
-    if(m){
-      const newCount=getMemberCount(id);
-      const milestones=[{n:10,role:'Etkinlik Kaşif 🌱',icon:'🏅'},{n:25,role:'Etkinlik Neferi ⚔',icon:'⚔️'},{n:50,role:'Etkinlik Müdavimi 👑',icon:'👑'}];
-      milestones.forEach(ms=>{
-        if(newCount===ms.n){
-          notify(ms.icon,`${m.nick} yeni rol kazandı!`,`${ms.role} rolüne ulaştı`,'#c4b5fd');
-          webhookMilestone(m.nick, ms.role, newCount, m.id);
-        }
-      });
-      // Streak kontrol
-      const streak=getMemberStreak(id);
-      const streakMilestones=[5,10,15,20,25];
-      if(streakMilestones.includes(streak)){
-        notify('🔥',`${m.nick} ${streak} seri!`,`Ardışık ${streak} etkinlik katılımı!`,'#fbbf24');
+  // Kayıt dışı etkinlikte seri/rol hesabı yapma
+  if(!e.kayitDisi){
+    // Streak kırılma kontrolü: bu etkinliğe katılmayan ama önceden serisi olan üyeler
+    const allActiveMembers=load('members').filter(m=>!m.archived);
+    allActiveMembers.forEach(m=>{
+      if(!evcSelectedMembers.includes(m.id)){
+        const prevStreak=getMemberStreak(m.id);
+        if(prevStreak>=5) webhookStreakBroken(m.nick, m.id, prevStreak);
       }
-    }
-  });
+    });
+    evcSelectedMembers.forEach(id=>{
+      const m=members.find(x=>x.id===id);
+      if(m){
+        const newCount=getMemberCount(id);
+        const milestones=[{n:10,role:'Etkinlik Kaşif 🌱',icon:'🏅'},{n:25,role:'Etkinlik Neferi ⚔',icon:'⚔️'},{n:50,role:'Etkinlik Müdavimi 👑',icon:'👑'}];
+        milestones.forEach(ms=>{
+          if(newCount===ms.n){
+            notify(ms.icon,`${m.nick} yeni rol kazandı!`,`${ms.role} rolüne ulaştı`,'#c4b5fd');
+            webhookMilestone(m.nick, ms.role, newCount, m.id);
+          }
+        });
+        const streak=getMemberStreak(id);
+        const streakMilestones=[5,10,15,20,25];
+        if(streakMilestones.includes(streak)){
+          notify('🔥',`${m.nick} ${streak} seri!`,`Ardışık ${streak} etkinlik katılımı!`,'#fbbf24');
+        }
+      }
+    });
+  }
   // Kalite kontrol
   const sc=parseFloat(e.score||0);
   if(sc>=8) webhookHighScore(e);
@@ -2545,6 +2593,7 @@ function completeEvent(){
   const sameMonth=allDone.filter(x=>{ const d=new Date(x.date); return d.getMonth()===m1&&d.getFullYear()===y1&&x.name.toLowerCase()===e.name.toLowerCase(); });
   if(sameMonth.length>=3) webhookRepeat(e.name, sameMonth.length);
 
+  const _evcKdR=document.getElementById('evc-kd-toggle');if(_evcKdR)_evcKdR.classList.remove('active');
   closeModal('modal-ev-detail');
   notify('✅',`${e.name} kaydedildi!`,`${evcSelectedMembers.length} katılımcı eklendi.`,'#34d399');
   webhookCompleteEvent(e);
@@ -2607,6 +2656,7 @@ function renderCalendar(){
       let ec='cal-ev';
       if(e.status==='done')ec+=' done';
       if(e.status==='cancelled')ec+=' cancelled';
+      if(e.kayitDisi)ec+=' kayitdisi';
       const eIdx=events.indexOf(e);
       return`<div class="${ec}" title="${e.name}" onclick="event.stopPropagation();openEvDetail(${eIdx})">${e.name.slice(0,12)}</div>`;
     }).join('');
@@ -2949,7 +2999,7 @@ function renderSolarias(){
 function renderPeriodAnalysis(){
   const wrap = document.getElementById('sol-period-analysis');
   if(!wrap) return;
-  const events = load('events').filter(e=>e.status==='done');
+  const events = load('events').filter(e=>e.status==='done'&&!e.kayitDisi);
   const now = new Date();
   const thisMonth = now.getMonth(); const thisYear = now.getFullYear();
   const lastMonth = thisMonth===0?11:thisMonth-1;
@@ -3679,6 +3729,8 @@ function openEditEventModal(){
   ).join('');
   eveSelectedMembers=[...(e.participants||[])];
   renderEvePicker();updateEveSelTags();
+  const kdToggle=document.getElementById('eve-kd-toggle');
+  if(kdToggle){e.kayitDisi?kdToggle.classList.add('active'):kdToggle.classList.remove('active');}
 
   // Galeri & Alıntı bölümleri — sadece tamamlanmış etkinliklerde göster
   const eveKey='ev_'+(e.date+'_'+e.name).replace(/[^a-zA-Z0-9_]/g,'_');
@@ -3748,6 +3800,7 @@ function saveEditEvent(){
   e.managers=mgrs.join(', ');
   e.participants=eveSelectedMembers;
   e.issue=issueText;
+  e.kayitDisi=document.getElementById('eve-kd-toggle').classList.contains('active');
   save('events',events);
   // Save issue if new text
   if(issueText){
@@ -3913,6 +3966,11 @@ function solDrop(e,targetIdx){
 }
 
 // ==================== MODAL HELPERS ====================
+
+function toggleKayitDisi(prefix){
+  const btn=document.getElementById(prefix+'-kd-toggle');
+  if(btn) btn.classList.toggle('active');
+}
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 // Click-outside to close modals — event delegation (modal HTML sayfanın altında olduğu için)
@@ -4860,7 +4918,7 @@ function checkAnniversary(){
 // ==================== STREAK SİSTEMİ ====================
 // Streak: üyenin son kaç ardışık etkinliğe katıldığı (herhangi bir etkinlik atlandıysa sıfırlanır)
 function getMemberStreak(memberId){
-  const events = load('events').filter(e=>e.status==='done');
+  const events = load('events').filter(e=>e.status==='done'&&!e.kayitDisi);
   if(!events.length) return 0;
   // Tarihe göre sırala (eskiden yeniye)
   const sorted = [...events].sort((a,b)=>a.date.localeCompare(b.date));
