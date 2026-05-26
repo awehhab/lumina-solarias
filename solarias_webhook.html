@@ -807,7 +807,6 @@ body.viewer-mode .member-action-col { display: none !important; }
     <div class="ni" onclick="showTab('games')" id="nav-games"><span class="ni-icon">▷</span><span>Oyun Listesi</span></div>
     <div class="ni" onclick="showTab('solarias')" id="nav-solarias"><span class="ni-icon">★</span><span>Solarias</span></div>
     <div class="ni" onclick="showTab('issues')" id="nav-issues"><span class="ni-icon">⚑</span><span>Olumsuzluklar</span></div>
-    <div class="ni" onclick="showTab('data')" id="nav-data"><span class="ni-icon">🗂</span><span>Veri Yönetimi</span></div>
     <div class="ni" onclick="showTab('settings')" id="nav-settings"><span class="ni-icon">⚙</span><span>Ayarlar</span></div>
   </nav>
   <div class="ss">
@@ -1146,6 +1145,27 @@ body.viewer-mode .member-action-col { display: none !important; }
           <button class="ann-tb-btn" onclick="annFormat('justifyRight')" title="Sağa">⬜⬜⬛</button>
         </div>
         <div class="ann-tb-sep"></div>
+        <!-- Link butonu -->
+        <div class="ann-tb-group">
+          <button class="ann-tb-btn" onclick="annInsertLink()" title="Link Ekle" style="gap:3px;">🔗 Link</button>
+          <button class="ann-tb-btn" onclick="annInsertImage()" title="Görsel Ekle" style="gap:3px;">🖼 Görsel</button>
+        </div>
+        <div class="ann-tb-sep"></div>
+        <!-- Alıntı & Ayraç -->
+        <div class="ann-tb-group">
+          <button class="ann-tb-btn" onclick="annInsertQuote()" title="Alıntı Kutusu">❝ Alıntı</button>
+          <button class="ann-tb-btn" onclick="annInsertDivider()" title="Yatay Çizgi">— Ayraç</button>
+        </div>
+        <div class="ann-tb-sep"></div>
+        <!-- Emoji seçici -->
+        <div class="ann-tb-group" style="position:relative;">
+          <button class="ann-tb-btn" onclick="annToggleEmojiPicker(event)" title="Emoji Ekle">😀 Emoji</button>
+          <div id="ann-emoji-picker" style="display:none;position:absolute;top:32px;left:0;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rs);padding:8px;z-index:50;width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Sık Kullanılanlar</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;" id="ann-emoji-grid"></div>
+          </div>
+        </div>
+        <div class="ann-tb-sep"></div>
         <div class="ann-tb-group ann-color-group">
           <span style="font-size:11px;color:var(--text3);align-self:center;">Renk:</span>
           <button class="ann-color-dot" style="background:#f0ecff;" onclick="annColor('#f0ecff')" title="Beyaz"></button>
@@ -1168,7 +1188,9 @@ body.viewer-mode .member-action-col { display: none !important; }
         class="ann-editor-body"
         data-placeholder="Duyuru içeriğini buraya yaz..."
         onpaste="annOnPaste(event)"
-        oninput="annUpdatePreview()"></div>
+        oninput="annUpdatePreview()"
+        onmouseup="annSaveSelection()"
+        onkeyup="annSaveSelection()"></div>
 
       <div style="margin-top:14px;">
         <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Önizleme</div>
@@ -1217,7 +1239,79 @@ body.viewer-mode .member-action-col { display: none !important; }
     </div>
     <div id="pw-change-msg" style="font-size:12px;min-height:18px;margin-top:10px;"></div>
   </div>
-</div>
+
+  <!-- ===== VERİ YÖNETİMİ (Ayarlar içinde, sadece Admin) ===== -->
+  <div id="veri-yonetimi-wrap">
+    <div style="max-width:820px;margin-top:28px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+        <span style="font-size:16px;">🗂</span>
+        <span style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;">Veri Yönetimi</span>
+        <span style="font-size:12px;color:var(--text3);margin-left:4px;">Yedekleme, geri yükleme ve şablon sistemi</span>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="sec" style="max-width:720px;margin-top:0;">
+      <div class="sec-h"><div class="sec-t">📤 Dışa Aktar (Yedek)</div></div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.7;">
+        Tüm verilerini JSON formatında indir. Herhangi bir sorun çıkarsa bu dosyayı kullanarak geri yükleyebilirsin.
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <button class="btn btn-p" onclick="exportData('all')">⬇ Tümünü İndir</button>
+        <button class="btn btn-g" onclick="exportData('members')">👥 Sadece Üyeler</button>
+        <button class="btn btn-g" onclick="exportData('events')">📅 Sadece Etkinlikler</button>
+        <button class="btn btn-g" onclick="exportData('games')">🎮 Sadece Oyunlar</button>
+      </div>
+      <div id="export-info" style="margin-top:12px;font-size:12px;color:var(--text3);"></div>
+    </div>
+
+    <!-- Import -->
+    <div class="sec" style="max-width:720px;margin-top:0;" id="import-sec">
+      <div class="sec-h"><div class="sec-t">📥 İçe Aktar (Geri Yükle)</div></div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7;">
+        ⚠️ <strong style="color:var(--amber);">Dikkat:</strong> Mevcut veriler silinir ve dosyadaki verilerle değiştirilir. Önce yedek al!
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <label style="display:flex;align-items:center;gap:10px;background:var(--card2);border:1.5px dashed var(--border2);border-radius:var(--rs);padding:16px;cursor:pointer;transition:border-color .2s;" id="import-drop-zone">
+          <span style="font-size:24px;">📂</span>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);">JSON dosyası seç veya sürükle</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">Daha önce buradan indirilen yedek dosyaları desteklenir</div>
+          </div>
+          <input type="file" id="import-file" accept=".json" style="display:none;" onchange="previewImport(this)">
+        </label>
+        <div id="import-preview" style="display:none;background:var(--card2);border:1px solid var(--border2);border-radius:var(--rs);padding:14px;">
+          <div class="sec-t" style="font-size:13px;margin-bottom:10px;">📋 Dosya İçeriği</div>
+          <div id="import-preview-body" style="font-size:12px;color:var(--text2);line-height:1.8;"></div>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button class="btn btn-g" onclick="cancelImport()">İptal</button>
+            <button class="btn btn-d" onclick="confirmImport()">⚠ Geri Yükle</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Templates -->
+    <div class="sec" style="max-width:720px;margin-top:0;">
+      <div class="sec-h">
+        <div class="sec-t">📋 Etkinlik Şablonları</div>
+        <button class="btn btn-p btn-sm" id="save-template-btn" onclick="openSaveTemplate()">＋ Şablon Kaydet</button>
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+        Sık kullandığın etkinlik türlerini şablon olarak kaydet. Yeni etkinlik eklerken tek tıkla doldur.
+      </div>
+      <div id="template-list"></div>
+    </div>
+
+    <!-- Firebase Durumu -->
+    <div class="sec" style="max-width:720px;margin-top:0;">
+      <div class="sec-h"><div class="sec-t">☁ Firebase Durumu</div></div>
+      <div id="fb-status-body" style="font-size:13px;line-height:1.9;"></div>
+      <button class="btn btn-g btn-sm" style="margin-top:10px;" onclick="renderFbStatus()">🔄 Yenile</button>
+    </div>
+  </div><!-- /veri-yonetimi-wrap -->
+
+</div><!-- /tab-settings -->
 
 <!-- ISSUES -->
 <div class="tab" id="tab-issues">
@@ -1226,73 +1320,6 @@ body.viewer-mode .member-action-col { display: none !important; }
     <button class="btn btn-p" onclick="openAddIssue()">＋ Sorun Ekle</button>
   </div>
   <div id="issue-list-wrap"></div>
-</div>
-
-<!-- DATA MANAGEMENT -->
-<div class="tab" id="tab-data">
-  <div class="ph">
-    <div><div class="pt">Veri Yönetimi</div><div class="ps">Yedekleme, geri yükleme ve şablon sistemi</div></div>
-  </div>
-
-  <!-- Export -->
-  <div class="sec" style="max-width:720px;">
-    <div class="sec-h"><div class="sec-t">📤 Dışa Aktar (Yedek)</div></div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.7;">
-      Tüm verilerini JSON formatında indir. Herhangi bir sorun çıkarsa bu dosyayı kullanarak geri yükleyebilirsin.
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;">
-      <button class="btn btn-p" onclick="exportData('all')">⬇ Tümünü İndir</button>
-      <button class="btn btn-g" onclick="exportData('members')">👥 Sadece Üyeler</button>
-      <button class="btn btn-g" onclick="exportData('events')">📅 Sadece Etkinlikler</button>
-      <button class="btn btn-g" onclick="exportData('games')">🎮 Sadece Oyunlar</button>
-    </div>
-    <div id="export-info" style="margin-top:12px;font-size:12px;color:var(--text3);"></div>
-  </div>
-
-  <!-- Import -->
-  <div class="sec" style="max-width:720px;margin-top:0;" id="import-sec">
-    <div class="sec-h"><div class="sec-t">📥 İçe Aktar (Geri Yükle)</div></div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.7;">
-      ⚠️ <strong style="color:var(--amber);">Dikkat:</strong> Mevcut veriler silinir ve dosyadaki verilerle değiştirilir. Önce yedek al!
-    </div>
-    <div style="display:flex;flex-direction:column;gap:10px;">
-      <label style="display:flex;align-items:center;gap:10px;background:var(--card2);border:1.5px dashed var(--border2);border-radius:var(--rs);padding:16px;cursor:pointer;transition:border-color .2s;" id="import-drop-zone">
-        <span style="font-size:24px;">📂</span>
-        <div>
-          <div style="font-size:13px;font-weight:500;color:var(--text);">JSON dosyası seç veya sürükle</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">Daha önce buradan indirilen yedek dosyaları desteklenir</div>
-        </div>
-        <input type="file" id="import-file" accept=".json" style="display:none;" onchange="previewImport(this)">
-      </label>
-      <div id="import-preview" style="display:none;background:var(--card2);border:1px solid var(--border2);border-radius:var(--rs);padding:14px;">
-        <div class="sec-t" style="font-size:13px;margin-bottom:10px;">📋 Dosya İçeriği</div>
-        <div id="import-preview-body" style="font-size:12px;color:var(--text2);line-height:1.8;"></div>
-        <div style="display:flex;gap:8px;margin-top:14px;">
-          <button class="btn btn-g" onclick="cancelImport()">İptal</button>
-          <button class="btn btn-d" onclick="confirmImport()">⚠ Geri Yükle</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Templates -->
-  <div class="sec" style="max-width:720px;margin-top:0;">
-    <div class="sec-h">
-      <div class="sec-t">📋 Etkinlik Şablonları</div>
-      <button class="btn btn-p btn-sm" id="save-template-btn" onclick="openSaveTemplate()">＋ Şablon Kaydet</button>
-    </div>
-    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
-      Sık kullandığın etkinlik türlerini şablon olarak kaydet. Yeni etkinlik eklerken tek tıkla doldur.
-    </div>
-    <div id="template-list"></div>
-  </div>
-
-  <!-- Firebase Durumu -->
-  <div class="sec" style="max-width:720px;margin-top:0;">
-    <div class="sec-h"><div class="sec-t">☁ Firebase Durumu</div></div>
-    <div id="fb-status-body" style="font-size:13px;line-height:1.9;"></div>
-    <button class="btn btn-g btn-sm" style="margin-top:10px;" onclick="renderFbStatus()">🔄 Yenile</button>
-  </div>
 </div>
 
 </div><!-- /main -->
@@ -5706,6 +5733,165 @@ function initTheme(){
 }
 // initTheme is called inside _bootApp after Firebase loads
 
+// ===== DUYURU EDİTÖR - YENİ FONKSİYONLAR =====
+
+// Editördeki imleç konumunu kaydet/geri yükle (modal açılınca seçim kaybolmasın diye)
+let _annSavedRange = null;
+function annSaveSelection(){
+  const sel = window.getSelection();
+  if(sel && sel.rangeCount > 0){
+    _annSavedRange = sel.getRangeAt(0).cloneRange();
+  }
+}
+function annRestoreSelection(){
+  const editor = document.getElementById('ann-editor');
+  if(!_annSavedRange) { editor.focus(); return; }
+  editor.focus();
+  try {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(_annSavedRange);
+  } catch(e) { editor.focus(); }
+}
+
+// Link ekleme (özel isimle)
+function annInsertLink(){
+  // Seçimi MODAL AÇMADAN ÖNCE kaydet (modal açılınca blur olur, seçim gider)
+  annSaveSelection();
+  const selText = window.getSelection()?.toString().trim() || '';
+  const m = document.getElementById('modal-ann-link');
+  if(m){
+    document.getElementById('ann-link-url').value = '';
+    document.getElementById('ann-link-text').value = selText; // seçili metni aktar
+    openModal('modal-ann-link');
+    // Kısa gecikme ile doğru input'a focus ver
+    setTimeout(()=>{
+      const focusEl = selText
+        ? document.getElementById('ann-link-url')   // metin zaten var, URL'ye git
+        : document.getElementById('ann-link-text'); // önce ismi yaz
+      focusEl.focus();
+    }, 80);
+  }
+}
+
+function annConfirmLink(){
+  const url = document.getElementById('ann-link-url').value.trim();
+  const text = document.getElementById('ann-link-text').value.trim();
+  if(!url){ notify('⚠️','URL boş olamaz','Bir link adresi gir.','#fbbf24'); return; }
+  const linkText = text || url;
+  const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+  closeModal('modal-ann-link');
+  // Seçimi geri yükle, ardından link ekle
+  annRestoreSelection();
+  const linkHtml = `<a href="${fullUrl}" target="_blank" rel="noopener" style="color:var(--p400);text-decoration:underline;font-weight:500;" class="ann-link">${linkText}</a>`;
+  document.execCommand('insertHTML', false, linkHtml);
+  _annSavedRange = null;
+  annUpdatePreview();
+}
+
+// Görsel ekleme (URL veya dosya)
+function annInsertImage(){
+  annSaveSelection(); // görselden sonra imleci doğru yere koy
+  const m = document.getElementById('modal-ann-image');
+  if(m){
+    document.getElementById('ann-img-url').value = '';
+    document.getElementById('ann-img-alt').value = '';
+    document.getElementById('ann-img-width').value = '100';
+    document.getElementById('ann-img-align').value = 'center';
+    openModal('modal-ann-image');
+    setTimeout(()=>{ document.getElementById('ann-img-url').focus(); }, 80);
+  }
+}
+
+function annConfirmImage(){
+  const url = document.getElementById('ann-img-url').value.trim();
+  const alt = document.getElementById('ann-img-alt').value.trim() || 'Görsel';
+  const width = document.getElementById('ann-img-width').value.trim() || '100';
+  const align = document.getElementById('ann-img-align').value;
+  if(!url){ notify('⚠️','URL boş olamaz','Bir görsel linki gir.','#fbbf24'); return; }
+  const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+  const alignStyle = align==='center' ? 'display:block;margin:10px auto;' : align==='right' ? 'float:right;margin:8px 0 8px 12px;' : 'float:left;margin:8px 12px 8px 0;';
+  const imgHtml = `<img src="${fullUrl}" alt="${alt}" style="${alignStyle}max-width:${width}%;border-radius:8px;" onerror="this.style.display='none'"><br>`;
+  closeModal('modal-ann-image');
+  annRestoreSelection(); // imleci kayıtlı pozisyona geri getir
+  document.execCommand('insertHTML', false, imgHtml);
+  _annSavedRange = null;
+  annUpdatePreview();
+}
+
+// Alıntı kutusu
+function annInsertQuote(){
+  const editor = document.getElementById('ann-editor');
+  editor.focus();
+  const sel = window.getSelection();
+  const selectedText = sel ? sel.toString().trim() : '';
+  const quoteText = selectedText || 'Alıntı metni buraya...';
+  const quoteHtml = `<blockquote style="border-left:3px solid var(--p400);padding:8px 14px;margin:10px 0;background:rgba(196,181,253,0.08);border-radius:0 6px 6px 0;color:var(--text2);font-style:italic;">${quoteText}</blockquote><br>`;
+  document.execCommand('insertHTML', false, quoteHtml);
+  annUpdatePreview();
+}
+
+// Yatay ayraç
+function annInsertDivider(){
+  const editor = document.getElementById('ann-editor');
+  editor.focus();
+  document.execCommand('insertHTML', false, '<hr style="border:none;border-top:1px solid rgba(196,181,253,0.25);margin:14px 0;"><br>');
+  annUpdatePreview();
+}
+
+// Emoji seçici
+const ANN_EMOJIS = ['🎉','🔥','⭐','🏆','📢','🎮','👑','💜','✅','❌','⚠️','🎯','💡','🌟','🎲','🛡','⚔️','🗡','🎪','🎵','📅','⏰','🚀','💫','🌙','☀️','❄️','🌊','⚡','🎊','👾','🤖','🦾','💎','🔮','🎭','🪄','🏅','🥇','📌','🔔','📣','💬','🗨️','✨','🎀','🃏','🎰'];
+
+function annToggleEmojiPicker(e){
+  e.stopPropagation();
+  const picker = document.getElementById('ann-emoji-picker');
+  const grid = document.getElementById('ann-emoji-grid');
+  if(!picker) return;
+  if(picker.style.display==='none'){
+    // Render emojis
+    grid.innerHTML = ANN_EMOJIS.map(em=>
+      `<button onclick="annPickEmoji('${em}')" style="background:none;border:1px solid transparent;border-radius:4px;cursor:pointer;font-size:18px;padding:3px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;transition:background .12s;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'">${em}</button>`
+    ).join('');
+    picker.style.display='block';
+    // Dışarı tıklanınca kapat
+    setTimeout(()=>{
+      document.addEventListener('click', annCloseEmojiPicker, {once:true});
+    }, 50);
+  } else {
+    picker.style.display='none';
+  }
+}
+
+function annPickEmoji(em){
+  const editor = document.getElementById('ann-editor');
+  editor.focus();
+  document.execCommand('insertText', false, em);
+  document.getElementById('ann-emoji-picker').style.display='none';
+  annUpdatePreview();
+}
+
+function annCloseEmojiPicker(){
+  const picker = document.getElementById('ann-emoji-picker');
+  if(picker) picker.style.display='none';
+}
+
+// CSS: ann-link hover efekti
+(function(){
+  const s = document.createElement('style');
+  s.textContent = `
+    .ann-link:hover { opacity: 0.8; }
+    .ann-editor-body a { color: var(--p400); text-decoration: underline; }
+    .ann-editor-body img { max-width: 100%; border-radius: 8px; }
+    .ann-editor-body blockquote { border-left: 3px solid var(--p400); padding: 8px 14px; margin: 10px 0; background: rgba(196,181,253,0.08); border-radius: 0 6px 6px 0; color: var(--text2); font-style: italic; }
+    .ann-editor-body hr { border: none; border-top: 1px solid rgba(196,181,253,0.25); margin: 14px 0; }
+    .ann-card-body a { color: var(--p400); text-decoration: underline; }
+    .ann-card-body img { max-width: 100%; border-radius: 8px; margin: 8px 0; }
+    .ann-card-body blockquote { border-left: 3px solid var(--p400); padding: 8px 14px; margin: 10px 0; background: rgba(196,181,253,0.08); border-radius: 0 6px 6px 0; color: var(--text2); font-style: italic; }
+    .ann-card-body hr { border: none; border-top: 1px solid rgba(196,181,253,0.25); margin: 14px 0; }
+  `;
+  document.head.appendChild(s);
+})();
+
 </script>
 
 <!-- Game Detail Modal -->
@@ -5759,5 +5945,74 @@ function initTheme(){
     </div>
   </div>
 </div>
+<!-- Ann Link Modal -->
+<div class="mbg" id="modal-ann-link">
+  <div class="modal" style="max-width:440px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-t" style="margin:0;">🔗 Link Ekle</div>
+      <span style="cursor:pointer;color:var(--text3);font-size:18px;" onclick="closeModal('modal-ann-link')">✕</span>
+    </div>
+    <div class="fg">
+      <div class="fgrp fgf">
+        <label>Link Metni <span style="color:var(--text3);font-weight:400;">(görünecek isim)</span></label>
+        <input id="ann-link-text" placeholder='Örn: BURADAN ulaşabilirsiniz' maxlength="200" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('ann-link-url').focus();}">
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">Boş bırakılırsa URL görünür.</div>
+      </div>
+      <div class="fgrp fgf">
+        <label>URL *</label>
+        <input id="ann-link-url" type="url" placeholder="https://discord.gg/..." onkeydown="if(event.key==='Enter')annConfirmLink()">
+      </div>
+    </div>
+    <div style="background:rgba(196,181,253,0.06);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;font-size:12px;color:var(--text3);margin-top:12px;line-height:1.6;">
+      <strong style="color:var(--text2);">Örnek:</strong> Metin: <em>"BURADAN ulaşabilirsiniz"</em> — URL: <em>https://discord.gg/abc</em><br>
+      Sonuç: <a style="color:var(--p400);text-decoration:underline;">BURADAN ulaşabilirsiniz</a>
+    </div>
+    <div class="fa">
+      <button class="btn btn-g" onclick="closeModal('modal-ann-link')">İptal</button>
+      <button class="btn btn-p" onclick="annConfirmLink()">🔗 Ekle</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ann Image Modal -->
+<div class="mbg" id="modal-ann-image">
+  <div class="modal" style="max-width:480px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-t" style="margin:0;">🖼 Görsel Ekle</div>
+      <span style="cursor:pointer;color:var(--text3);font-size:18px;" onclick="closeModal('modal-ann-image')">✕</span>
+    </div>
+    <div class="fg">
+      <div class="fgrp fgf">
+        <label>Görsel URL *</label>
+        <input id="ann-img-url" type="url" placeholder="https://i.imgur.com/... veya Discord CDN linki">
+      </div>
+      <div class="fgrp fgf">
+        <label>Açıklama (alt metin) <span style="color:var(--text3);font-weight:400;">(opsiyonel)</span></label>
+        <input id="ann-img-alt" placeholder="Etkinlik afişi">
+      </div>
+      <div class="fgrp">
+        <label>Genişlik (%)</label>
+        <input id="ann-img-width" type="number" min="10" max="100" value="100" placeholder="100">
+      </div>
+      <div class="fgrp">
+        <label>Hizalama</label>
+        <select id="ann-img-align">
+          <option value="center">Ortala</option>
+          <option value="left">Sola</option>
+          <option value="right">Sağa</option>
+        </select>
+      </div>
+    </div>
+    <div style="background:rgba(196,181,253,0.06);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;font-size:12px;color:var(--text3);margin-top:12px;line-height:1.6;">
+      💡 Discord'dan görsel linki almak için: Görsele sağ tık → Bağlantıyı kopyala.<br>
+      Alternatif: <strong style="color:var(--text2);">imgur.com</strong>'a yükle, direct link al.
+    </div>
+    <div class="fa">
+      <button class="btn btn-g" onclick="closeModal('modal-ann-image')">İptal</button>
+      <button class="btn btn-p" onclick="annConfirmImage()">🖼 Ekle</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
