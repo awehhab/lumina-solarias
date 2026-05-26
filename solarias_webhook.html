@@ -3875,14 +3875,24 @@ function saveQuickMember(){
   if(!nick||!user||!id)return alert('Tüm alanlar zorunlu!');
   const members=load('members');
   if(members.find(m=>m.id===id))return alert('Bu ID zaten kayıtlı!');
-  members.push({nick,user,id});save('members',members);
+  members.push({nick,user,id});
+  // Cache'i render'dan önce güncelle
+  if(window._fbCache) window._fbCache.members = members;
+  save('members',members);
   closeModal('modal-quick-member');
   notify('👤','Üye eklendi',nick+' sisteme eklendi.','#c4b5fd');
   webhookMemberAdd(nick, id);
-  if(total2%5===0) webhookGrowth(total2);
+  if(typeof total2!=='undefined' && total2%5===0) webhookGrowth(total2);
   const src=document.getElementById('qm-source').value;
-  if(src==='edit'){eveSelectedMembers.push(id);renderEvePicker(document.getElementById('eve-mp-search').value);updateEveSelTags();}
-  else if(src==='complete'){evcSelectedMembers.push(id);renderEvcPicker(document.getElementById('evc-mp-search').value);updateSelectedTags('evc-selected-tags',evcSelectedMembers,'evc');}
+  if(src==='edit'){
+    if(!eveSelectedMembers.includes(id)) eveSelectedMembers.push(id);
+    renderEvePicker(document.getElementById('eve-mp-search').value);
+    updateEveSelTags();
+  } else if(src==='complete'){
+    if(!evcSelectedMembers.includes(id)) evcSelectedMembers.push(id);
+    renderEvcPicker(document.getElementById('evc-mp-search').value);
+    updateSelectedTags('evc-selected-tags',evcSelectedMembers,'evc');
+  }
   updateSidebar();renderMembers();
 }
 
