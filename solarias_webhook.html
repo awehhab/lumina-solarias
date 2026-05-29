@@ -1778,6 +1778,46 @@ function roleBadge(count){
   return`<span class="badge b-none">—</span>`;
 }
 
+function parseDurationMinutes(dur){
+  const s=String(dur||'').toLowerCase();
+  let total=0;
+  const h=s.match(/(\d+(?:[.,]\d+)?)\s*saat/);
+  const m=s.match(/(\d+)\s*dak/);
+  if(h)total+=Math.round(parseFloat(h[1].replace(',','.'))*60);
+  if(m)total+=parseInt(m[1],10);
+  return total;
+}
+function fmtDurationFromMinutes(min){
+  if(!min)return'—';
+  const h=Math.floor(min/60), m=min%60;
+  if(h&&m)return`${h} saat ${m} dk`;
+  if(h)return`${h} saat`;
+  return`${m} dk`;
+}
+function avg(nums){
+  const clean=nums.filter(n=>Number.isFinite(n));
+  return clean.length?clean.reduce((a,b)=>a+b,0)/clean.length:0;
+}
+function getMemberProfileStats(id){
+  const events=load('events');
+  const official=events.filter(e=>e.status==='done'&&!e.kayitDisi&&(e.participants||[]).includes(id)).sort((a,b)=>b.date.localeCompare(a.date));
+  const allDone=events.filter(e=>e.status==='done'&&(e.participants||[]).includes(id)).sort((a,b)=>b.date.localeCompare(a.date));
+  const typeMap={};
+  official.forEach(e=>{typeMap[e.type||'Diğer']=(typeMap[e.type||'Diğer']||0)+1;});
+  const topType=Object.entries(typeMap).sort((a,b)=>b[1]-a[1])[0];
+  const now=new Date();
+  const last30=official.filter(e=>(now-new Date(e.date+'T00:00:00'))/(1000*60*60*24)<=30).length;
+  const prev30=official.filter(e=>{
+    const diff=(now-new Date(e.date+'T00:00:00'))/(1000*60*60*24);
+    return diff>30&&diff<=60;
+  }).length;
+  let trend='Durağan', trendBadge='b-none';
+  if(last30>prev30){trend='Yükselişte';trendBadge='b-act';}
+  else if(last30<prev30){trend='Düşüşte';trendBadge='b-ret';}
+  const totalMinutes=official.reduce((sum,e)=>sum+parseDurationMinutes(e.dur),0);
+  return{official,allDone,lastEvent:official[0]||null,topType,last30,prev30,trend,trendBadge,totalMinutes};
+}
+
 // ==================== NOTIFICATIONS ====================
 function notify(icon,title,msg,color){
   const bar=document.getElementById('notif-bar');
@@ -2227,6 +2267,7 @@ function openMemberDrawer(id){
   const typeMap={};
   myEventsOfficial.forEach(e=>{typeMap[e.type||'Diğer']=(typeMap[e.type||'Diğer']||0)+1;});
   const topType=Object.entries(typeMap).sort((a,b)=>b[1]-a[1])[0];
+  const profile=getMemberProfileStats(id);
 
   const archiveBanner=m.archived?`
     <div style="background:rgba(107,95,136,0.15);border:1px solid rgba(107,95,136,0.3);border-radius:var(--rs);padding:10px 14px;margin-bottom:14px;">
@@ -2251,7 +2292,12 @@ function openMemberDrawer(id){
       <div class="sc"><div class="sl">Rol</div><div style="margin-top:6px;">${roleBadge(count)}</div></div>
       <div class="sc"><div class="sl">🔥 Seri</div><div style="margin-top:6px;">${streak>0?streakBadge(streak)+'<span style="font-size:11px;color:var(--text3);margin-left:4px;">ardışık</span>':'<span style="font-size:12px;color:var(--text3);">—</span>'}</div></div>
     </div>
-    ${topType?`<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">En çok katıldığı tür: <strong style="color:var(--text2);">${topType[0]}</strong> (${topType[1]} etkinlik)</div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <div class="sc"><div class="sl">Son Katılım</div><div style="font-size:13px;font-weight:600;color:var(--accent);margin-top:4px;">${profile.lastEvent?profile.lastEvent.name:'—'}</div><div class="ss2">${profile.lastEvent?fmtDateLong(profile.lastEvent.date):'Henüz resmi katılım yok.'}</div></div>
+      <div class="sc"><div class="sl">Favori Tür</div><div style="font-size:13px;font-weight:600;color:var(--accent);margin-top:4px;">${profile.topType?profile.topType[0]:'—'}</div><div class="ss2">${profile.topType?profile.topType[1]+' etkinlik':'Tür verisi yok.'}</div></div>
+      <div class="sc"><div class="sl">Toplam Süre</div><div style="font-size:13px;font-weight:600;color:var(--accent);margin-top:4px;">${fmtDurationFromMinutes(profile.totalMinutes)}</div><div class="ss2">Süresi girilmiş resmi etkinlikler</div></div>
+      <div class="sc"><div class="sl">Son 30 Gün</div><div style="font-size:13px;font-weight:600;color:var(--accent);margin-top:4px;">${profile.last30} etkinlik</div><div class="ss2">Önceki 30 gün: ${profile.prev30} · <span class="badge ${profile.trendBadge}" style="font-size:10px;">${profile.trend}</span></div></div>
+    </div>
     <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text2);">Etkinlik Geçmişi</div>
     ${myEvents.slice(0,25).map(e=>`
       <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--card2);border-radius:var(--rs);border:1px solid ${e.kayitDisi?'rgba(251,191,36,0.2)':' var(--border)'};margin-bottom:6px;${e.kayitDisi?'opacity:0.65;':''}" >
@@ -2714,31 +2760,7 @@ function renderGames(){
     const nm=(e.name||'').toLowerCase().trim();
     gamePlayMap[nm]=(gamePlayMap[nm]||0)+1;
   });
-  // Suggest next game (least recently played from Düzenli Oynanan)
-  const lastPlayed={};
-  events.filter(e=>e.status==='done').sort((a,b)=>b.date.localeCompare(a.date)).forEach(e=>{
-    const nm=(e.name||'').toLowerCase().trim();
-    if(!lastPlayed[nm])lastPlayed[nm]=e.date;
-  });
-  const duzenliGames=games.filter(g=>g.cat==='Düzenli Oynanan');
-  const suggestion=duzenliGames.slice().sort((a,b)=>{
-    const la=lastPlayed[(a.name||'').toLowerCase().trim()]||'0000-00-00';
-    const lb=lastPlayed[(b.name||'').toLowerCase().trim()]||'0000-00-00';
-    return la.localeCompare(lb);
-  })[0];
-
-  let suggHtml='';
-  if(suggestion){
-    const lp=lastPlayed[(suggestion.name||'').toLowerCase().trim()];
-    suggHtml=`<div style="background:rgba(196,181,253,0.08);border:1px solid var(--border2);border-radius:var(--rs);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
-      <span style="font-size:18px;">💡</span>
-      <div><div style="font-size:12px;color:var(--text3);">Sıradaki etkinlik önerisi</div>
-      <div style="font-size:13.5px;font-weight:600;color:var(--accent);">${suggestion.name}</div>
-      <div style="font-size:11px;color:var(--text3);">${lp?'Son oynandı: '+fmtDateLong(lp):'Henüz oynanmadı'}</div></div>
-    </div>`;
-  }
-
-  document.getElementById('game-list-wrap').innerHTML=suggHtml+cats.map(cat=>{
+  document.getElementById('game-list-wrap').innerHTML=cats.map(cat=>{
     const catGames=games.filter(g=>g.cat===cat);
     return`<div class="game-cat-hdr">${cat} <span style="background:var(--card2);padding:1px 8px;border-radius:20px;font-size:10px;">${catGames.length} oyun</span></div>
     <div class="game-cat-body" data-cat="${cat}">
