@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lumina Solarias — Etkinlik Yönetim Sistemi</title>
+<title>Lumina Solarias — Etkinlik Yönetim Sistemi</title> 
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <!-- Firebase SDK -->
@@ -900,7 +900,7 @@ body.viewer-mode .member-action-col { display: none !important; }
 <div class="tab" id="tab-members">
   <div class="ph">
     <div><div class="pt">Üyeler</div><div class="ps">Katılımcı listesi ve rol durumları</div></div>
-    <button class="btn btn-p" onclick="openAddMember()">＋ Yeni Üye</button>
+    <button class="btn btn-p" onclick="openAddMember()" id="btn-add-member">＋ Yeni Üye</button>
   </div>
   <div class="sec">
     <div class="sec-h">
@@ -940,7 +940,10 @@ body.viewer-mode .member-action-col { display: none !important; }
     <div style="position:relative;height:220px;"><canvas id="chart-ev-part"></canvas></div>
   </div>
   <div class="sec">
-    <div class="sec-h"><div class="sec-t">Etkinlik Geçmişi</div></div>
+    <div class="sec-h">
+      <div class="sec-t">Etkinlik Geçmişi</div>
+      <input class="sbar" placeholder="🔍 Etkinlik ara..." oninput="filterEvents(this.value)" id="ev-search" style="width:200px;" id="ev-search-input">
+    </div>
     <div id="ev-list"></div>
   </div>
 </div>
@@ -992,7 +995,7 @@ body.viewer-mode .member-action-col { display: none !important; }
 <div class="tab" id="tab-solarias">
   <div class="ph">
     <div><div class="pt">Solarias</div><div class="ps">Etkinlik yöneticileri ve koordinatörler</div></div>
-    <button class="btn btn-p" onclick="openAddSolarias()">＋ Solarias Ekle</button>
+    <button class="btn btn-p" onclick="openAddSolarias()" id="btn-add-solarias">＋ Solarias Ekle</button>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;">
     <div class="sec">
@@ -2102,7 +2105,7 @@ function renderMembers(){
     } else {
       html+=`<tr onclick="${isViewer?'':'openMemberDrawer(\''+m.id+'\')'}" style="cursor:${isViewer?'default':'pointer'};">
         <td><strong>${m.nick}</strong></td>
-        <td style="color:var(--text2);">${isViewer?'—':m.user}</td>
+        <td style="color:var(--text2);">${m.user}</td>
         <td><strong style="color:var(--p200);">${count}</strong></td>
         <td>${roleBadge(count)}</td>
         <td>${status==='Aktif'?`<span class="badge b-act">● Aktif</span>`:`<span class="badge b-pas">● Pasif</span>`}${returned?' <span class="badge b-ret">↩ Geri döndü</span>':''}</td>
@@ -2316,6 +2319,9 @@ function closeDrawer(){
 }
 
 // ==================== EVENTS ====================
+let evFilter = '';
+function filterEvents(v){ evFilter = v; renderEvents(); }
+
 function renderEvents(){
   const events=load('events');
   const done=events.filter(e=>e.status==='done'&&!e.kayitDisi);
@@ -2339,7 +2345,12 @@ function renderEvents(){
   });
 
   const allSorted=[...events].sort((a,b)=>b.date.localeCompare(a.date));
-  document.getElementById('ev-list').innerHTML=allSorted.map(e=>{
+  const evQ=(evFilter||'').toLowerCase();
+  const filteredEvs = evQ ? allSorted.filter(e=>(e.name||'').toLowerCase().includes(evQ)||(e.type||'').toLowerCase().includes(evQ)||(e.managers||'').toLowerCase().includes(evQ)||(e.date||'').includes(evQ)) : allSorted;
+  // Arama kutusunu sync et
+  const evSearchInp = document.getElementById('ev-search');
+  if(evSearchInp && evSearchInp.value !== evFilter) evSearchInp.value = evFilter;
+  document.getElementById('ev-list').innerHTML=filteredEvs.map(e=>{
     const idx=events.indexOf(e);
     const pc=(e.participants||[]).length;
     const _issueKey=e.name+' — '+fmtDateShort(e.date);
@@ -2734,7 +2745,8 @@ function renderCalendar(){
       return`<div class="${ec}" title="${e.name}" onclick="event.stopPropagation();openEvDetail(${eIdx})">${e.name.slice(0,12)}</div>`;
     }).join('');
 
-    return`<div class="${cls}" data-caldate="${ds}" onclick="openAddEventFlow('${ds}')">
+    const calDayClick = (currentRole==='viewer') ? '' : `onclick="openAddEventFlow('${ds}')"`;
+    return`<div class="${cls}" data-caldate="${ds}" ${calDayClick}>
       <div class="cal-dn">${date.getDate()}</div>
       ${evHtml}
     </div>`;
@@ -2957,7 +2969,7 @@ function renderSolarias(){
         <div class="sol-info" style="flex:1;"><div class="sol-name">${s.name}</div><div class="sol-role">${s.role}</div></div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div class="sol-count">${count}</div>
-          <button class="btn btn-g btn-sm" onclick="event.stopPropagation();openEditSolarias(${i})">✎</button>
+          ${currentRole==='admin'?`<button class="btn btn-g btn-sm" onclick="event.stopPropagation();openEditSolarias(${i})">✎</button>`:''}
           <span id="sol-icon-${i}" style="font-size:12px;color:var(--text3);min-width:12px;">▸</span>
         </div>
       </div>
@@ -4544,8 +4556,10 @@ function checkUpcomingReminder(){
   if(_whAlreadySent('reminder','day')) return;
   const url = getWebhookUrl(); if(!url) return;
   const events = load('events');
-  const now = new Date();
-  const tomorrow = new Date(now.getTime() + 24*60*60*1000).toISOString().split('T')[0];
+  // Türkiye saatine göre (UTC+3) yarının tarihini hesapla
+  const nowTR = new Date(new Date().getTime() + 3*60*60*1000);
+  const tomorrowTR = new Date(nowTR.getTime() + 24*60*60*1000);
+  const tomorrow = tomorrowTR.toISOString().split('T')[0];
   const upcoming = events.filter(e=>e.status==='planned' && e.date===tomorrow);
   if(!upcoming.length) return;
   _whMarkSent('reminder','day');
@@ -4853,6 +4867,14 @@ function webhookWeeklyPlan(){
 }
 // ── Tekrar gönderim koruması ─────────────────────────────────────────────────
 // Her periyodik bildirim için "bugün zaten gönderildi mi?" kontrolü.
+// Türkiye saatine göre bugünün tarihini YYYY-MM-DD olarak döner (UTC+3)
+function _trToday(){
+  const now = new Date();
+  // UTC+3 offset: +180 dakika
+  const tr = new Date(now.getTime() + 3*60*60*1000);
+  return tr.toISOString().split('T')[0];
+}
+
 // key: benzersiz bildirim kodu, period: 'day' | 'week' | 'month'
 function _whAlreadySent(key, period){
   try {
@@ -4860,8 +4882,8 @@ function _whAlreadySent(key, period){
     if(!stored) return false;
     const now = new Date();
     if(period === 'day'){
-      // Aynı takvim günü
-      return stored === now.toISOString().split('T')[0];
+      // Türkiye takvim gününe göre karşılaştır
+      return stored === _trToday();
     } else if(period === 'week'){
       // Aynı ISO hafta (yıl + hafta numarası)
       const isoWeek = d => {
@@ -4882,7 +4904,8 @@ function _whMarkSent(key, period){
     const now = new Date();
     let val;
     if(period === 'day'){
-      val = now.toISOString().split('T')[0];
+      // Türkiye takvim gününü kaydet
+      val = _trToday();
     } else if(period === 'week'){
       const t = new Date(now); t.setHours(0,0,0,0); t.setDate(t.getDate()+3-(t.getDay()+6)%7);
       const w = new Date(t.getFullYear(),0,4);
@@ -5215,6 +5238,8 @@ const ROLE_TABS = {
   solarias:['overview','members','events','weekly','games','solarias','issues'],
   viewer:  ['overview','members','events','weekly'],
 };
+// Viewer modunda sidebar'dan gizlenecek nav item'lar (görüntüleyemezler)
+const VIEWER_HIDDEN_TABS = ['games','solarias','issues','settings'];
 // Sadece admin yazabilir, solarias bazı şeyleri yazabilir
 const READONLY_TABS_FOR_SOLARIAS = ['overview']; // sadece okuma, butonlar gizlenir
 const WRITE_ACTIONS_ADMIN_ONLY = ['saveWebhookUrl','testWebhook','webhookToggleAll','deleteMember','updateMember','saveNewMember','confirmArchive'];
@@ -5225,6 +5250,15 @@ function applyRoleRestrictions(){
   allTabs.forEach(tab=>{
     const nav = document.getElementById('nav-'+tab);
     if(!nav)return;
+    // Viewer modunda bazı sekmeler tamamen gizlenir
+    if(currentRole==='viewer' && VIEWER_HIDDEN_TABS.includes(tab)){
+      nav.style.display='none';
+      nav.classList.add('locked');
+      nav.onclick = (e)=>{e.stopPropagation();showNotif('🔒','Erişim Kısıtlı','Bu seksiyon için giriş yapın.',3000);};
+      return;
+    } else {
+      nav.style.display='';
+    }
     if(allowed.includes(tab)){
       nav.classList.remove('locked');
       nav.onclick = ()=>showTab(tab);
@@ -5284,9 +5318,26 @@ function applyRoleRestrictions(){
   // Görüntüleyici: class tabanlı readonly — temizlenebilir
   if(currentRole==='viewer'){
     document.body.classList.add('viewer-mode');
+    // Viewer'da salt-okunur UI elementlerini gizle
+    const addMemberBtn = document.getElementById('btn-add-member');
+    if(addMemberBtn) addMemberBtn.style.display='none';
+    const archiveToggle = document.getElementById('m-archive-toggle');
+    if(archiveToggle) archiveToggle.style.display='none';
   } else {
     document.body.classList.remove('viewer-mode');
+    const addMemberBtn = document.getElementById('btn-add-member');
+    if(addMemberBtn) addMemberBtn.style.display='';
+    const archiveToggle = document.getElementById('m-archive-toggle');
+    if(archiveToggle) archiveToggle.style.display='';
   }
+
+  // Etkinlik arama: sadece admin/solarias
+  const evSearchEl = document.getElementById('ev-search');
+  if(evSearchEl) evSearchEl.style.display = (currentRole==='admin'||currentRole==='solarias') ? '' : 'none';
+
+  // Solarias Ekle butonu sadece admin
+  const addSolariasBtn = document.getElementById('btn-add-solarias');
+  if(addSolariasBtn) addSolariasBtn.style.display = currentRole==='admin' ? '' : 'none';
 
   // Şifre yönetimi sadece admin
   const pwSec = document.getElementById('pw-manage-sec');
